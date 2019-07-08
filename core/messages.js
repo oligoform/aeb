@@ -1,0 +1,1 @@
+;define(function(require){'use strict';var n=require('lang/theme-messages');return{get:function(e){var r='';if(n.hasOwnProperty(e)){r=n[e]};return r}}});

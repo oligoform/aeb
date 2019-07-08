@@ -1,0 +1,1 @@
+;define(function(require){'use strict';var o=require('backbone'),t=require('root/config');require('localstorage');var a=o.Model.extend({localStorage:new o.LocalStorage('Map-'+t.app_slug),defaults:{id:'',center:{lat:45.7640,lng:4.8357},zoom:13}});return a});

@@ -1,0 +1,1 @@
+;define(['jquery','core/theme-app','theme/js/map/map-engine-leaflet'],function($,e,t){var n=new t({id:'map',default_data:{center:{lat:45.7640,lng:4.8357},zoom:6}});e.addCustomRoute('map','map');e.on('screen:showed',function(e){if(e.item_id==='map'){n.update()}});e.on('screen:leave',function(e,a){if(e.item_id==='map'){n.remove()}})});

@@ -1,0 +1,1 @@
+;define(function(require){'use strict';var t=require('backbone');require('localstorage');var o=t.Model.extend({defaults:{id:''}});var a=t.Collection.extend({localStorage:new t.LocalStorage('Globals'),model:o,saveAll:function(){this.map(function(e){e.save()})},resetAll:function(){var t=this.length;for(var e=t-1;e>=0;e--){this.at(e).destroy()};this.reset()}});return a});

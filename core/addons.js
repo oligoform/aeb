@@ -1,0 +1,1 @@
+;define(function(require){'use strict';var a=require('core/addons-internal'),n={};n.isActive=function(t){return a.isActive(t)};n.getAppStaticData=function(t,n){return a.getAppStaticData(t,n)};n.getAppDynamicData=function(t,n){return a.getAppDynamicData(t,n)};return n});
