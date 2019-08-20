@@ -1,1 +1,31 @@
-;define(function(require){'use strict';var t=require('backbone');require('localstorage');var o=t.Model.extend({defaults:{id:''}});var a=t.Collection.extend({localStorage:new t.LocalStorage('Globals'),model:o,saveAll:function(){this.map(function(e){e.save()})},resetAll:function(){var t=this.length;for(var e=t-1;e>=0;e--){this.at(e).destroy()};this.reset()}});return a});
+define(function (require) {
+
+    "use strict";
+
+    var Backbone                 = require('backbone');
+    require('localstorage');
+
+    var Global = Backbone.Model.extend({
+    	defaults : {
+    		id : ""
+        }
+    });
+
+    var Globals = Backbone.Collection.extend({
+    	localStorage: new Backbone.LocalStorage("Globals"),
+    	model : Global,
+    	saveAll : function(){
+       	 	this.map(function(global){global.save();});
+        },
+        resetAll : function(){
+        	var length = this.length; 
+        	for (var i = length - 1; i >= 0; i--) { 
+        		this.at(i).destroy(); 
+        	} 
+        	this.reset();
+        }
+    });
+    
+    return Globals;
+
+});

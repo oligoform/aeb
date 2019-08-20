@@ -1,1 +1,59 @@
-;define(function(require){'use strict';var $=require('jquery'),t=require('underscore'),i=require('backbone'),s=require('text!theme/menu.html'),m=require('core/theme-tpl-tags'),r=require('core/models/menu-items'),l=require('core/lib/hooks');return i.View.extend({initialize:function(e){this.template=t.template(s);t.bindAll(this,'render');this.menu=new r.MenuItems()},addItem:function(e,n,i,s,m){this.menu.add(t.extend({id:e,label:i,type:n,link:s},m))},resetAll:function(){this.menu.reset()},render:function(){var e={menu_items:this.menu.toJSON(),TemplateTags:m};e=l.applyFilters('template-args',e,['menu','menu',this]);var t=this.template(e);$(this.el).html(t);return this}})});
+define(function (require) {
+
+      "use strict";
+
+      var $                   = require('jquery'),
+		  _                   = require('underscore'),
+      	  Backbone            = require('backbone'),
+      	  Tpl                 = require('text!theme/menu.html'),
+		  ThemeTplTags		  = require('core/theme-tpl-tags'),
+      	  MenuItems           = require('core/models/menu-items'),
+		  Hooks               = require('core/lib/hooks');
+      	  
+      return Backbone.View.extend({
+    	  
+  		initialize : function(options) {
+  			
+  	        this.template = _.template(Tpl);
+  	        
+  	        _.bindAll(this,'render');
+  			
+  			this.menu = new MenuItems.MenuItems();
+  			
+  	    },
+
+  	    addItem : function(id,type,label,link,options){
+  	    	this.menu.add(_.extend({id:id,label:label,type:type,link:link},options));
+  	    },
+  	    
+  	    resetAll : function(){
+  	    	this.menu.reset();
+  	    },
+  	    
+  	    render : function( ) {
+			
+			var template_args = {
+				menu_items : this.menu.toJSON(), 
+				TemplateTags : ThemeTplTags 
+			};
+			
+			/**
+			* Use this 'template-args' filter to pass custom data to your
+			* templates.
+			* 
+			* @param template_args : JSON object : the default template data to filter
+			* Params passed to the filter : 
+			* - view type : String
+			* - template name : String
+			* - view object : Backbone view object
+			*/
+			template_args = Hooks.applyFilters( 'template-args', template_args, ['menu','menu',this] );
+			
+  	    	var renderedContent = this.template(template_args);
+			
+  	        $(this.el).html(renderedContent);
+  	        return this;
+  	    }
+  	    
+  	});
+});

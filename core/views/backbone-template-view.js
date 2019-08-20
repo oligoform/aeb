@@ -1,1 +1,128 @@
-;define(function(require){'use strict';var $=require('jquery'),t=require('underscore'),a=require('backbone'),m=require('core/lib/hooks'),l=require('core/app-utils'),i=require('core/app'),n=function(e){t.bindAll(this,'checkTemplate','setTemplate');a.View.apply(this,[e])};t.extend(n.prototype,a.View.prototype,{screen_data:null,template_name:'default',fallback_template_name:'',template:null,is_static:!1,checkTemplate:function(a,m){var n=this,i='text!';if(this.template_name.match(/^addons\//g)){i+=this.template_name}else{i+='theme/'+this.template_name};i+='.html';var p=function(e){l.log('Error : view templates "'+n.template_name+'.html" and fallback "'+n.fallback_template_name+'.html" not found in theme');if(m){m()}},o=function(i){if(n.fallback_template_name!=''){l.log('View template "'+n.template_name+'.html" not found in theme : load fallback template "'+n.fallback_template_name+'"');require(['text!theme/'+n.fallback_template_name+'.html'],function(e){if(e.length){n.template=t.template(e);a()}else{p()}},function(e){p(e)})}else{l.log('Error : view template "'+n.template_name+'.html" not found in theme');if(m){m()}}};require([i],function(e){if(e.length){n.template=t.template(e);a()}else{o()}},function(e){o(e)})},setTemplate:function(e,t){var a=e!=undefined?e:'';a=m.applyFilters('template',a,[i.getQueriedScreen()]);if(a!=''){this.template_name=a;if(t!=undefined&&t!=''){this.fallback_template_name=t}}}});n.extend=a.View.extend;return n});
+define(function (require) {
+
+    "use strict";
+
+    //Mother view for all theme views with hookable template (archive, single, comments, 
+    //custom-page and custom-component).
+    //Implements specific pattern to replace the classical Backbone.View.extend, so that we can
+    //extend our TemplateView without having to call the parent view's initialize() method.
+    
+    var $                   = require('jquery'),
+        _                   = require('underscore'),
+        Backbone            = require('backbone'),
+        Hooks               = require('core/lib/hooks'),
+        Utils               = require('core/app-utils'),
+        App                 = require('core/app');
+
+    var TemplateView = function(args) {
+    	//This is the equivalent to the initialize() method
+    	
+    	_.bindAll(this,'checkTemplate','setTemplate');
+
+        Backbone.View.apply(this, [args]);
+    };
+
+    _.extend(TemplateView.prototype, Backbone.View.prototype, {
+    	
+    	screen_data: null,
+    	template_name: 'default',
+    	fallback_template_name: '',
+    	template: null,
+		is_static: false,
+    	
+    	/**
+    	 * Called in router to validate the view's template before showing the screen.
+    	 */
+    	checkTemplate : function(cb_ok,cb_error){
+        	var _this = this;
+			
+			var template_file = 'text!';
+			
+			if( this.template_name.match(/^addons\//g) ) {
+				template_file += this.template_name;
+			} else {
+				template_file += 'theme/'+ this.template_name;
+			}
+					
+			template_file += '.html';
+			
+			var fallback_template_failed = function( error ) {
+				Utils.log('Error : view templates "'+ _this.template_name +'.html" and fallback "'+ _this.fallback_template_name +'.html" not found in theme');
+				if( cb_error ){
+					cb_error();
+				}
+			};
+			
+			var default_template_failed = function( error ) {
+				if( _this.fallback_template_name != '' ){
+					Utils.log('View template "'+ _this.template_name +'.html" not found in theme : load fallback template "'+ _this.fallback_template_name +'"');
+					require(['text!theme/'+ _this.fallback_template_name +'.html'],
+						function(tpl){
+							if( tpl.length ) {
+								_this.template = _.template(tpl);
+								cb_ok();
+							} else {
+								//On mobile devices (but not in browsers) the require(['text!template'])
+								//is successful even if the template is not there...
+								//So we solve the problem by checking if tpl is empty, and
+								//if it is we consider that the template was not found :
+								fallback_template_failed();
+							}
+						},
+						function( fallback_error){
+							fallback_template_failed( fallback_error );
+						}
+					);
+				}else{
+					Utils.log('Error : view template "'+ _this.template_name +'.html" not found in theme');		
+					if( cb_error ){		
+						cb_error();		
+					}
+				}
+			};
+			
+        	require([template_file],
+  					function(tpl){
+						if( tpl.length ) {
+							_this.template = _.template(tpl);
+							cb_ok();
+						} else {
+							//On mobile devices (but not in browsers) the require(['text!template'])
+							//is successful even if the template is not there...
+							//So we solve the problem by checking if tpl is empty, and
+							//if it is we consider that the template was not found :
+							default_template_failed();
+						}
+  	      		  	},
+  	      		  	function( error ){
+  	      		  		default_template_failed( error );
+  	      		  	}
+  			);
+        },
+        
+        /**
+         * Called in children extended views, so that we can filter the template to use
+         * for rendering.
+         */
+        setTemplate : function(default_template,fallback_template){
+        	
+        	var template = default_template != undefined ? default_template : '';
+        	
+    		template = Hooks.applyFilters('template',template,[App.getQueriedScreen()]);
+
+    		if( template != ''){
+    			this.template_name = template;
+    			
+    			if( fallback_template != undefined && fallback_template != ''){
+        			this.fallback_template_name = fallback_template;
+        		}
+    		}
+    		
+        }
+        
+    });
+
+    TemplateView.extend = Backbone.View.extend;
+    
+    return TemplateView;
+});

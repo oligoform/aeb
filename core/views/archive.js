@@ -1,1 +1,61 @@
-;define(function(require){'use strict';var $=require('jquery'),e=require('underscore'),i=require('core/views/backbone-template-view'),a=require('core/theme-tpl-tags'),l=require('core/lib/hooks');return i.extend({className:'app-screen',initialize:function(t){this.setTemplate('archive');e.bindAll(this,'render','addPosts');this.posts=t.posts;this.title=t.title;this.total=t.total},render:function(){var t={posts:this.posts.toJSON(),list_title:this.title,total:this.total,TemplateTags:a};t=l.applyFilters('template-args',t,['archive',this.template_name,this]);var e=this.template(t);$(this.el).html(e);return this},addPosts:function(t){var s=this;e.each(t,function(t){s.posts.add(t)})}})});
+define(function (require) {
+
+    "use strict";
+
+    var $                   = require('jquery'),
+        _                   = require('underscore'),
+        TemplateView        = require('core/views/backbone-template-view'),
+        ThemeTplTags		= require('core/theme-tpl-tags'),
+		Hooks               = require('core/lib/hooks');
+
+    return TemplateView.extend({
+    	
+    	className: "app-screen",
+    	
+    	initialize : function(args) {
+            
+    		this.setTemplate('archive');
+           
+            _.bindAll(this,'render','addPosts');
+            
+    		this.posts = args.posts;
+    		
+    		this.title = args.title;
+    		this.total = args.total;
+        },
+
+        render : function() {
+			var template_args  = { 
+				posts : this.posts.toJSON(), 
+				list_title: this.title, 
+				total:this.total, 
+				TemplateTags : ThemeTplTags
+			};
+
+			/**
+			* Use this 'template-args' filter to pass custom data to your
+			* templates.
+			* 
+			* @param template_args : JSON object : the default template data to filter
+			* Params passed to the filter : 
+			* - view type : String
+			* - template name : String
+			* - view object : Backbone view object
+			*/
+			template_args = Hooks.applyFilters( 'template-args', template_args, ['archive',this.template_name,this] );
+			
+        	var renderedContent = this.template(template_args);
+            $(this.el).html(renderedContent); 
+            return this;
+        },
+        
+        addPosts : function(posts){
+        	var _this = this;
+        	_.each(posts,function(post){
+        		_this.posts.add(post);
+	  		});
+        }
+        
+    });
+
+});

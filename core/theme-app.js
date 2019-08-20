@@ -1,1 +1,1109 @@
-;define(function(require,exports){'use strict';var o=require('underscore'),p=require('backbone'),i=require('core/region-manager'),c=require('core/messages'),n=require('core/app'),s=require('core/lib/hooks'),d=require('core/app-dynamic-data'),l=require('core/theme-tpl-tags'),v=require('core/phonegap/utils'),t={};var a=o.extend({},p.Events);t.trigger=function(e,t){a.trigger(e,t)};t.on=function(e,t){if(o.contains(['screen:leave','screen:showed','screen:before-transition','menu:rendered','header:rendered'],e)){i.on(e,t)}else if(o.contains(['refresh:start','refresh:end'],e)){n.on(e,t)}else{a.on(e,t)}};n.on('all',function(e,t){var n=f(e,t),r=s.applyFilters('stop-theme-event',!1,[n,e]);if(!r){if(n.type=='error'||n.type=='info'||n.type=='network'){a.trigger(e,n);a.trigger(n.type,n)}}});var f=function(e,t){var n={event:e,type:'',subtype:t!==undefined&&t.hasOwnProperty('type')?t.type:'',message:'',core_data:t};if(e.indexOf('error:')===0){n.type='error';n.event=e.replace('error:','');if(t.type=='ajax'){n.message=c.get('error_remote_connexion_failed')}else{n.message=c.get('error_occured_undefined')}}else if(e.indexOf('info:')===0){n.type='info';n.event=e.replace('info:','');if(e=='info:no-content'){n.message=c.get('info_no_content')}}else if(e.indexOf('network:')===0){n.type='network';n.event=e.replace('network:','');if(e=='network:online'){n.message=c.get('info_network_online')}else if(e=='network:offline'){n.message=c.get('info_network_offline')}};n.message=s.applyFilters('theme-event-message',n.message,[n,e]);return n},g=function(e,t,n){e=e===!0||e===1||e==='1';t=!o.isUndefined(t)&&o.isString(t)?t:'';n=!o.isUndefined(n)?n:{};return{ok:e,message:t,data:n}};t.filter=function(e,t,n){s.addFilter(e,t,n)};t.action=function(e,t,n){s.addAction(e,t,n)};t.setParam=function(e,t){n.setParam(e,t)};var u=0;t.refresh=function(e,t){u++;n.sync(function(t){i.buildMenu(function(){n.resetDefaultRoute();var r=n.getParam('go-to-default-route-after-refresh');if(r){n.router.default_route()};p.history.stop();p.history.start({silent:!1});u--;if(t){t.resolve(g(!0))};if(e){e()}},!0)},function(e,n){u--;var r=f(e.event,e);if(t){t(r)};var o=g(!1,r.message,r);if(n){n.reject(o)}},!0)};t.isRefreshing=function(){return u>0};t.navigate=function(e){if(!n.isLaunching()){n.router.navigate(e,{trigger:!0})}};t.navigateToDefaultRoute=function(){if(!n.isLaunching()){n.router.default_route()}};t.navigateToPreviousScreen=function(){var e=n.getPreviousScreenLink();a.trigger('navigate:previous-screen',{previous_screen:n.getPreviousScreenData(),current_screen:n.getCurrentScreenData(),previous_screen_link:e});t.navigate(e)};t.reloadCurrentScreen=function(){var e=p.history.getFragment();n.router.navigate('WpakDummyRoute');n.router.navigate(e,{trigger:!0})};t.rerenderCurrentScreen=function(){var e=i.getCurrentView();e.render()};t.getCurrentView=function(){var e=i.getCurrentView();return e};t.getBackButtonDisplay=function(){var e='',t=n.getPreviousScreenData();if(!o.isEmpty(t)){e='show'}else{e='hide'};return e};t.getGetMoreLinkDisplay=function(){var e={display:!1,nb_left:0};var r=n.getCurrentScreenData();if(r.screen_type=='list'){var i=n.components.get(r.component_id);if(i){var t=i.get('data');if(t.hasOwnProperty('ids')){var o=t.total-t.ids.length;e.nb_left=o;e.display=o>0}}};e=s.applyFilters('get-more-link-display',e,[r]);return e};t.getMoreComponentItems=function(e,r){var o=n.getCurrentScreenData();if(o.screen_type==='list'){n.getMoreOfComponent(o.component_id,function(t){var n=i.getCurrentView();n.addPosts(t.new_items);n.render();e(t.is_last,t.new_items,t.nb_left)},function(e){var n=t.getGetMoreLinkDisplay();r(f(e.event,e),n)})}};t.displayPostComments=function(e,r,o){n.getPostComments(e,function(o,i,s){r(o.toJSON(),i.toJSON(),s);t.navigate(n.getScreenFragment('comments',{item_id:e}))},function(e){o(f(e.event,e))})};t.updateCurrentCommentScreen=function(e,t){var r=this.getCurrentScreenObject();if(r.screen_type!=='comments'){return};var o=r.post.id,s=this;n.getPostComments(o,function(t,n){var r=i.getCurrentView();r.comments=t;s.rerenderCurrentScreen();e(t,n)},function(e){t(e)},!0)};t.getComponents=function(){return n.getComponents()};t.getCurrentComponentId=function(){var t='',e=n.getCurrentScreenData();if(e.component_id&&n.componentExists(e.component_id)){t=e.component_id};return t};t.getCurrentComponent=function(){var e=null,r=t.getCurrentComponentId();if(r!==''){e=n.getComponentData(r)};return e};t.liveQuery=function(e,t){var o=null;if(t.success){o=t.success;delete t.success};var r=null;if(t.error){r=t.error;delete t.error};n.liveQuery(e,o,r,t)};t.refreshComponent=function(e){e=e||{};var r=e.component_id?e.component_id:t.getCurrentComponentId(),n={};if(e.success){n.success=e.success};if(e.error){n.error=e.error};if(e.refresh_type){n.type=e.refresh_type};if(e.hasOwnProperty('persistent')){n.persistent=e.persistent};t.liveQuery({wpak_component_slug:r,wpak_query_action:'get-component'},n)};t.refreshComponentItems=function(e,r,i){if(e===undefined){e=l.getCurrentComponentId()};var a=n.components.get(e);if(a){if(r===undefined||r===''||r===0||(o.isArray(r)&&r.length===0)){var s=a.get('data');if(s&&s.ids){r=s.ids}else{r=null}};if(r!==null){t.liveQuery({wpak_component_slug:e,wpak_query_action:'get-items',wpak_items_ids:r},{type:i.hasOwnProperty('refresh_type')?i.refresh_type:'replace-keep-global-items',persistent:i.hasOwnProperty('persistent')?i.persistent:!1,auto_interpret_result:!0,success:function(e){if(i!==undefined&&i.success){var n=e;if(!i.hasOwnProperty('autoformat_answer')||i.autoformat_answer===!0){if(e.globals){n=e.globals;var t=[];o.each(e.globals,function(e,n){t.push(n)});if(t.length===1){if(o.isArray(r)){n=e.globals[t[0]]}else{n=o.first(o.toArray(e.globals[t[0]]))}}}};i.success(n)}},error:function(e){if(i!==undefined&&i.error){i.error(e)}}})}}};t.getDynamicData=function(e){return d.getDynamicData(e)};var m=function(e,t){if(!o.isEmpty(e)){var n=t==undefined?$('body'):$('#'+t);n.removeClass(function(e,t){return(t.match(/\app-\S+/g)||[]).join(' ')});n.addClass('app-'+e.screen_type);n.addClass('app-'+e.fragment)}};t.setAutoContextClass=function(e,t){if(e){i.on('screen:showed',function(e){m(e,t)});m(n.getCurrentScreenData(),t)}};t.getTransitionDirection=function(e,t){var n='default';if(t.screen_type=='list'||t.screen_type=='custom-component'){if(e.screen_type=='single'){n='previous-screen'}else{n='default'}}else if(t.screen_type=='single'){if(e.screen_type=='list'||e.screen_type=='custom-component'){n='next-screen'}else if(e.screen_type=='comments'){n='previous-screen'}else{n='default'}}else if(t.screen_type=='comments'){n='next-screen'}else{n='default'};var n=s.applyFilters('transition-direction',n,[e,t]);return n};t.getNetworkState=function(e){return v.getNetworkState(e)};t.showCustomPage=function(e,t,r,o){if(e===undefined){e='custom'};if(t===undefined){t={}};if(r===undefined){r='auto-custom-page'};if(o===undefined){o=!0};n.showCustomPage(e,t,r,o)};t.addCustomRoute=function(e,t,r){e=e.replace('#','');if(t===undefined){t='custom'};if(r===undefined){r={}};n.addCustomRoute(e,t,r)};t.removeCustomRoute=function(e){e=e.replace('#','');n.removeCustomRoute(e)};t.getItems=function(e,t,r){var o=null;t=t||'posts';r=r||'slice';switch(r){case'slice':o=n.getGlobalItemsSlice(t,e);break;case'array':o=n.getGlobalItems(t,e);break};return o};t.getItem=function(e,t){t=t||'posts';return n.getGlobalItem(t,e)};t.getItemsFromRemote=function(e,t){n.getItemsFromRemote(e,t)};t.getCurrentScreen=function(){return n.getCurrentScreenData()};t.getPreviousScreenInHistory=function(){return n.getPreviousScreenData()};t.getPreviousScreen=function(){return n.getPreviousScreenMemoryData()};t.getHistory=function(){return n.getHistory()};t.getLastHistoryAction=function(){return n.getLastHistoryAction()};t.getCurrentScreenObject=function(){var t={};var e=n.getCurrentScreenData(),r=i.getCurrentView();switch(e.screen_type){case'list':t={title:e.label,component_id:e.component_id,posts:r.posts.toJSON()};o.extend(t,e.data);break;case'single':if(e.data.post){t=e.data.post}else if(e.data.item){t=e.data.item};break;case'comments':t={post:r.post.toJSON(),comments:r.comments.toJSON()};break;case'page':t=e.data.post;t.component=l.getComponent(e.component_id);break;case'custom-page':t={id:e.item_id,route:e.item_id,title:r.custom_page_data&&r.custom_page_data.hasOwnProperty('title')?r.custom_page_data.title:'',data:r.custom_page_data?r.custom_page_data:{},template:r.template_name};break;case'custom-component':t={component_id:e.component_id,title:e.label,route:e.fragment,data:e.data,template:r.template_name};break};t.screen_type=e.screen_type;return t};t.renderMenu=function(){var e=i.getMenuView();if(e){e.render()}};o.extend(exports,t)});
+/**
+ * Defines functions that can be called from theme functions.js.
+ * (Those functions can't be directly called form theme templates).
+ */
+define( function( require, exports ) {
+
+	"use strict";
+
+	var _ = require( 'underscore' ),
+			Backbone = require( 'backbone' ),
+			RegionManager = require( 'core/region-manager' ),
+			Messages = require( 'core/messages' ),
+			App = require( 'core/app' ),
+			Hooks = require( 'core/lib/hooks' ),
+			DynamicData = require( 'core/app-dynamic-data' ),
+			TemplateTags = require( 'core/theme-tpl-tags' ),
+			PhoneGap = require( 'core/phonegap/utils' );
+
+	var themeApp = { };
+
+	/************************************************
+	 * Events management
+	 */
+
+	/**
+	 * Theme event aggregator
+	 */
+	var vent = _.extend( { }, Backbone.Events );
+
+	/**
+	 * Allows themes (and addons) to trigger events
+	 * @param string event Event id
+	 * @param JSON object data
+	 */
+	themeApp.trigger = function( event, data ) {
+		vent.trigger( event, data );
+	};
+
+	/**
+	 * Aggregate ThemeApp and RegionManager events
+	 */
+	themeApp.on = function( event, callback ) {
+		if ( _.contains( [ 'screen:leave',
+							'screen:showed',
+							'screen:before-transition',
+							'menu:rendered',
+							'header:rendered'
+						],
+						event ) ) {
+			//Proxy RegionManager events :
+			RegionManager.on( event, callback );
+		} else if ( _.contains( [ 'refresh:start', 'refresh:end' ],	event ) ) {
+			//Proxy App events :
+			App.on( event, callback );
+		} else {
+			vent.on( event, callback );
+		}
+	};
+
+	/**
+	 * Proxy App events to theme events
+	 *
+	 * @param {string} event App event id
+	 * @param {object} data App event data
+	 * @returns {event} Triggers theme event based on App core event
+	 */
+	App.on( 'all', function( event, data ) {
+
+		var theme_event_data = format_theme_event_data( event, data );
+
+		/**
+		 * "stop-theme-event" filter : use this filter to avoid an event from triggering in the theme.
+		 * Useful to deactivate some error events display for exemple.
+		 *
+		 * @param {boolean} Whether to stop the event or not. Default false.
+		 * @param {JSON Object} theme_event_data : Theme event data object
+		 * @param {String} event : Original (internal) event name
+		 */
+		var stop_theme_event = Hooks.applyFilters( 'stop-theme-event', false, [theme_event_data, event] );
+
+		if ( !stop_theme_event ) {
+
+			if ( theme_event_data.type == 'error'
+				 || theme_event_data.type == 'info'
+				 || theme_event_data.type == 'network'
+				) {
+				//2 ways of binding to error and info events :
+				vent.trigger( event, theme_event_data ); //Ex: bind directly to 'info:no-content'
+				vent.trigger( theme_event_data.type, theme_event_data ); //Ex: bind to general 'info', then filter with if( info.event == 'no-content' )
+			}
+
+		}
+
+	} );
+
+	/**
+	 * Formats App core events feedbacks in a themes friendly way.
+	 *
+	 * @param {string} event App event id (example "error:synchro:ajax")
+	 * @param {object} data
+	 * @returns {object} {
+	 *		event: string : theme event id (example : "synchro:ajax"),
+	 *		type: string : 'error' | 'info',
+	 *		message: string : error or info message
+	 *		data: object : original core event data : {
+	 *			type: string : 'ajax' | 'web-service' | 'not-found' | 'wrong-data',
+	 *			where: string : core function where the event occured
+	 *			message: string : message associated to the event
+	 *			data: object : data associated to the core event
+	 *		}
+	 * }
+	 */
+	var format_theme_event_data = function( event, data ) {
+
+		var theme_event_data = {
+			event: event,
+			type: '',
+			subtype: data !== undefined && data.hasOwnProperty( 'type' ) ? data.type : '',
+			message: '',
+			core_data: data
+		};
+
+		if ( event.indexOf( 'error:' ) === 0 ) {
+
+			theme_event_data.type = 'error';
+			theme_event_data.event = event.replace( 'error:', '' );
+
+			if ( data.type == 'ajax' ) {
+				theme_event_data.message = Messages.get('error_remote_connexion_failed');
+			}
+			else {
+				theme_event_data.message = Messages.get('error_occured_undefined');
+			}
+
+		} else if ( event.indexOf( 'info:' ) === 0 ) {
+
+			theme_event_data.type = 'info';
+			theme_event_data.event = event.replace( 'info:', '' );
+
+			if ( event == 'info:no-content' ) {
+				theme_event_data.message = Messages.get('info_no_content');
+			}
+
+		} else if ( event.indexOf( 'network:' ) === 0 ) {
+
+			theme_event_data.type = 'network';
+			theme_event_data.event = event.replace( 'network:', '' );
+
+			if( event == 'network:online' ) {
+				theme_event_data.message = Messages.get('info_network_online');
+			}else if( event == 'network:offline' ) {
+				theme_event_data.message = Messages.get('info_network_offline');
+			}
+
+		}
+
+		/**
+		 * "theme-event-message" filter : use this hook to customize event messages
+		 *
+		 * @param {String} Event message to customize
+		 * @param {JSON Object} theme_event_data : Theme event data object
+		 * @param {String} event : Original (internal) event name
+		 */
+		theme_event_data.message = Hooks.applyFilters( 'theme-event-message', theme_event_data.message, [theme_event_data, event] );
+
+		return theme_event_data;
+	};
+
+	/************************************************
+	 * Themes actions results
+	 */
+
+	/**
+	 * Formats data that is used in themes as the result of an event or
+	 * treatment.
+	 *
+	 * @param {boolean} ok
+	 * @param {string} message
+	 * @param {object} data
+	 * @returns object {
+	 *		ok: boolean,
+	 *		message: string,
+	 *		data: object
+	 * }
+	 */
+	var format_result_data = function( ok, message, data ) {
+
+		ok = ok === true || ok === 1 || ok === '1';
+
+		message = !_.isUndefined(message) && _.isString(message) ? message: '';
+
+		data = !_.isUndefined(data) ? data : {};
+
+		return { ok: ok, message: message, data: data };
+	};
+
+
+	/************************************************
+	 * Filters, actions and Params management
+	 */
+	themeApp.filter = function( filter, callback, priority ) {
+		Hooks.addFilter( filter, callback, priority );
+	};
+
+	themeApp.action = function( action, callback, priority ) {
+		Hooks.addAction( action, callback, priority );
+	};
+
+	themeApp.setParam = function( param, value ) {
+		App.setParam( param, value );
+	};
+
+
+	/************************************************
+	 * App contents refresh
+	 */
+
+	var refreshing = 0;
+
+	/**
+	 * Launches app content refresh
+	 *
+	 * @param {callback} cb_ok Treatment to apply on success
+	 * @param {callback} cb_error Treatment to apply on error
+	 * @returns {event|callback} : when refresh is finished :
+	 * - "refresh:end" event is triggered with a "result" object param
+	 * - callback cb_ok is called if success, with a "result" object param
+	 * - callback cb_error is called if error, with a "result" object param
+	 *
+	 * "result" object : {
+	 *		ok: boolean : true if refresh is successful,
+	 *		message: string : empty if success, error message if refresh fails,
+	 *		data: object : empty if success, error object if refresh fails :
+	 *			  Use this result.data if you need specific info about the error.
+	 *			  See format_theme_event_data() for error object details.
+	 * }
+	 */
+	themeApp.refresh = function( cb_ok, cb_error ) {
+
+		refreshing++;
+
+		App.sync(
+			function( deferred ) {
+				RegionManager.buildMenu(
+					function() {
+						App.resetDefaultRoute();
+
+						/**
+						 * Use the 'go-to-default-route-after-refresh' to control whether
+						 * the default route should be automatically triggered after refresh.
+						 */
+						var go_to_default_route = App.getParam('go-to-default-route-after-refresh');
+
+						if( go_to_default_route ){
+							App.router.default_route();
+						}
+
+						Backbone.history.stop();
+						Backbone.history.start({silent:false});
+
+						refreshing--;
+                        
+                        if ( deferred ) {
+                            deferred.resolve( format_result_data( true ) ); //Triggers refresh:end
+                        }
+
+						if ( cb_ok ) {
+							cb_ok();
+						}
+					},
+					true
+				);
+			},
+			function( error, deferred ) {
+				refreshing--;
+
+				var formated_error = format_theme_event_data( error.event, error );
+
+				if ( cb_error ) {
+					cb_error( formated_error );
+				}
+
+				var result = format_result_data(false,formated_error.message,formated_error);
+
+                if ( deferred ) {
+                    deferred.reject( result ); //Triggers refresh:end
+                }
+			},
+			true
+		);
+	};
+
+	themeApp.isRefreshing = function() {
+		return refreshing > 0;
+	};
+
+	/************************************************
+	 * App navigation
+	 */
+
+	themeApp.navigate = function( navigate_to_fragment ) {
+		if ( !App.isLaunching() ) { //Don't allow to navigate from theme if app is launching
+			App.router.navigate( navigate_to_fragment, { trigger: true } );
+		}
+	};
+
+	themeApp.navigateToDefaultRoute = function() {
+		if ( !App.isLaunching() ) { //Don't allow to navigate from theme if app is launching
+			App.router.default_route();
+		}
+	};
+
+	themeApp.navigateToPreviousScreen = function() {
+		var prev_screen_link = App.getPreviousScreenLink();
+
+		vent.trigger( 'navigate:previous-screen', {
+			previous_screen: App.getPreviousScreenData(),
+			current_screen: App.getCurrentScreenData(),
+			previous_screen_link: prev_screen_link
+		});
+
+		themeApp.navigate( prev_screen_link );
+	};
+
+	/**
+	 * Reload current screen : re-trigger current route.
+	 */
+	themeApp.reloadCurrentScreen = function() {
+		//Directly navigate to current fragment doesn't work (Backbone sees that
+		//it is the same and doesn't re-trigger it!) : we have to navigate to a
+		//false dummy route (without triggering the navigation, so it is invisible)
+		//and then renavigate to original current route :
+		var current_fragment = Backbone.history.getFragment();
+		App.router.navigate( 'WpakDummyRoute' ); //Route that does not exist
+		App.router.navigate( current_fragment, { trigger: true } );
+	};
+
+	/**
+	 * Re-render current view WITHOUT re-triggering any route.
+	 */
+	themeApp.rerenderCurrentScreen = function() {
+		var current_view = RegionManager.getCurrentView();
+		current_view.render();
+	};
+	
+	/**
+	 * Retrieve current Backbone view object
+	 */
+	themeApp.getCurrentView = function() {
+		var current_view = RegionManager.getCurrentView();
+		return current_view;
+	};
+
+	/************************************************
+	 * Back button
+	 */
+
+	/**
+	 * To know if the back button can be displayed on the current screen,
+	 * according to app history. Use this to configure back button
+	 * manually if you don't use themeApp.setAutoBackButton().
+	 */
+	themeApp.getBackButtonDisplay = function() {
+		var display = '';
+
+		var previous_screen = App.getPreviousScreenData();
+
+		if ( !_.isEmpty( previous_screen ) ) {
+			display = 'show';
+		} else {
+			display = 'hide';
+		}
+
+		return display;
+	};
+
+	/************************************************
+	 * "Get more" link
+	 */
+
+	themeApp.getGetMoreLinkDisplay = function() {
+		var get_more_link_data = { display: false, nb_left: 0 };
+
+		var current_screen = App.getCurrentScreenData();
+
+		if ( current_screen.screen_type == 'list' ) {
+			var component = App.components.get( current_screen.component_id );
+			if ( component ) {
+				var component_data = component.get( 'data' );
+				if ( component_data.hasOwnProperty( 'ids' ) ) {
+					var nb_left = component_data.total - component_data.ids.length;
+					get_more_link_data.nb_left = nb_left;
+					get_more_link_data.display = nb_left > 0;
+				}
+			}
+		}
+
+		get_more_link_data = Hooks.applyFilters( 'get-more-link-display', get_more_link_data, [ current_screen ] );
+
+		return get_more_link_data;
+	};
+
+	themeApp.getMoreComponentItems = function( cb_after, cb_error ) {
+		var current_screen = App.getCurrentScreenData();
+		if ( current_screen.screen_type === 'list' ) {
+			App.getMoreOfComponent(
+				current_screen.component_id,
+				function( data ) {
+					var current_archive_view = RegionManager.getCurrentView();
+					current_archive_view.addPosts( data.new_items );
+					current_archive_view.render();
+					cb_after( data.is_last, data.new_items, data.nb_left );
+				},
+				function( error ) {
+					var get_more_link_data = themeApp.getGetMoreLinkDisplay();
+					cb_error( format_theme_event_data( error.event, error ), get_more_link_data );
+				}
+			);
+		}
+	};
+
+	/************************************************
+	 * Comments
+	 */
+
+	/**
+	 * Displays the comments screen for a given post.
+	 * Retrieves the post comments from server or from memory if already cached,
+	 * then navigate to #comments-[post_id].
+	 * Using this function allows to use success and error callbacks (cb_ok/cb_error),
+	 * which you can't do if you navigate directly to #comments-[post_id] in your theme.
+	 *
+	 * Note that the cb_ok() callback is called after comments are retrieved, but can't
+	 * be called after the comments view is rendered (as view rendering is done in router).
+	 * If you need to do something after the comments screen is showed, you can use
+	 * the 'screen:showed' event where you'll test if ( current_screen.screen_type === 'comments' ) ).
+	 *
+	 * @param {int} post_id         Post we want to retrieve the comments for.
+	 * @param {function} cb_ok      What to do if coments are retrieved ok
+	 * @param {function} cb_error   What to do if an error occurs while retrieving comments
+	 */
+	themeApp.displayPostComments = function ( post_id, cb_ok, cb_error ) {
+
+		App.getPostComments(
+			post_id,
+			function ( comments, post, item_global ) {
+				cb_ok( comments.toJSON(), post.toJSON(), item_global );
+				themeApp.navigate( App.getScreenFragment( 'comments', { item_id: post_id } ) );
+			},
+			function ( error ) {
+				cb_error( format_theme_event_data( error.event, error ) );
+			}
+		);
+
+	};
+	
+	/**
+	 * When on a comments screen, reloads the comments for the current post and
+	 * re-renders the view to display new comments.
+	 * 
+	 * @param {function} cb_ok      What to do when comment screen was updated successfully 
+	 * @param {function} cb_error   What to do if an error occurs while updating comment screen
+	 */
+	themeApp.updateCurrentCommentScreen = function ( cb_ok, cb_error ) {
+		
+		var current_screen_info = this.getCurrentScreenObject();
+		
+		if ( current_screen_info.screen_type !== 'comments' ) {
+			return;
+		}
+
+		//Retrieve post id corresponding to the current comments screen:
+		var post_id = current_screen_info.post.id;
+
+		var _this = this;
+		
+		//Reload post comments from server:
+		App.getPostComments(
+			post_id,
+			function ( comments, post ) {
+				//New comments loaded successfully				
+				
+				//Update current view's comments with new comments
+				var comments_view = RegionManager.getCurrentView();
+				comments_view.comments = comments;
+				
+				//Rerender screen:
+				_this.rerenderCurrentScreen();
+				
+				cb_ok( comments, post );
+			},
+			function ( error ) {
+				cb_error( error );
+			},
+			true //To force post comments cache flush
+		);
+	}
+
+	/************************************************
+	 * Components
+	 */
+
+	/**
+	 * Retrieve all app's components
+	 *
+	 * @returns {Array} Array of compoents as JSON objects
+	 */
+	themeApp.getComponents = function() {
+		return App.getComponents();
+	};
+	
+	/**
+	 * Retrieves the id of the component corresponding to the current screen, if any.
+	 * 
+	 * @returns {string} Id of the current screen's component (usually a string slug)
+	 */
+	themeApp.getCurrentComponentId = function() {
+		var current_component_id = '';
+		
+		var current_screen = App.getCurrentScreenData();
+		if ( current_screen.component_id && App.componentExists( current_screen.component_id ) ) {
+			current_component_id = current_screen.component_id;
+		}
+		
+        return current_component_id;
+    };
+	
+	/**
+	 * Retrieves the component corresponding to the current screen, if any.
+	 * 
+	 * @returns {JSON object} Current screen's component data
+	 */
+	themeApp.getCurrentComponent = function() {
+		var current_component = null;
+		
+		var current_component_id = themeApp.getCurrentComponentId();
+		if ( current_component_id !== '' ) {
+			current_component = App.getComponentData( current_component_id );
+		}
+		
+        return current_component;
+    };
+
+	/************************************************
+	 * "Live Query" Web Service
+	 */
+
+	/**
+	 * Call "Live Query" web service.
+	 * Allows to refresh app components (or choosen component items) dynamically from server.
+	 *
+	 * @param JSON Object web_service_params Any params that you want to send to the server.
+	 *        The following params are automatically recognised and interpreted on server side :
+	 *        - wpak_component_slug : { string | Array of string } components to make query on
+	 *        - wpak_query_action : { string } 'get-component' to retrieve the full component, or 'get-items' to retrieve choosen component items
+	 *        - wpak_items_ids : { int | array of int } If wpak_query_action = 'get-items' : component items ids to retrieve
+	 * @param options JSON Object : allowed settings :
+	 * - success Function Callback called on success
+	 * - error Function Callback called on error
+	 * - auto_interpret_result Boolean (default true). If false, web service answer must be interpreted in the cb_ok callback.
+	 * - type String : can be one of :
+	 *       -- "update" : merge new with existing component data,
+	 *       -- "replace" : delete current component data, empty the corresponding global, and replace with new
+	 *       -- "replace-keep-global-items" (default) : for list components : replace component items ids and merge global items
+	 * - persistent Boolean (default false). If true, new data is stored in local storage.
+	 */
+	themeApp.liveQuery = function( web_service_params, options ){
+
+		var cb_ok = null;
+		if( options.success ) {
+			cb_ok = options.success;
+			delete options.success;
+		}
+
+		var cb_error = null;
+		if( options.error ) {
+			cb_error = options.error;
+			delete options.error;
+		}
+
+		App.liveQuery( web_service_params, cb_ok, cb_error, options );
+
+	};
+
+	/**
+	 * Refresh component data and items from server.
+	 * 
+	 * @param {JSON Object} options :
+	 *  - component_id {string} String (slug) idendifier provided when creating the component.
+	 *                          If none provided, will retrieve current screen component's id, if any.
+	 *	- success {callback}
+	 *	- error {callback}
+	 *	- refresh_type {string} Can be:
+	 *		 -- "update" : merge new with existing component data,
+	 *       -- "replace" : delete current component data, empty the corresponding global, and replace with new
+	 *       -- "replace-keep-global-items" (default) : for list components : replace component items ids and merge global items
+	 *  - persistent {boolean} (default false). If true, new data is stored in local storage.
+	 */
+	themeApp.refreshComponent = function( options ) {
+		
+		options = options || {};
+		
+		var component_id = options.component_id ? options.component_id : themeApp.getCurrentComponentId();
+		
+		var live_query_options = {};
+		
+		if ( options.success ) {
+			live_query_options.success = options.success; //Will be passed (answer, update_results)
+		}
+		
+		if ( options.error ) {
+			live_query_options.error = options.error; //Will be passed (answer_error)
+		}
+		
+		if ( options.refresh_type ) { //If none, will default to 'replace-keep-global-items'
+			live_query_options.type = options.refresh_type;
+		}
+		
+		if ( options.hasOwnProperty( 'persistent' ) ) { //If none, will default to false
+			live_query_options.persistent = options.persistent;
+		}
+					
+		themeApp.liveQuery(
+			{
+				wpak_component_slug: component_id,
+				wpak_query_action: 'get-component'
+			},
+			live_query_options
+		);
+
+	};
+
+	/**
+	 * Refresh given component items from server.
+	 * This only refreshes choosen items of a component, not the component itself. 
+	 * Use ThemeApp.refreshComponent() to update component data in addition to its items.
+	 *
+	 * @param {string}   component_id   String (slug) idendifier provided when creating the component
+	 *                                  If none provided, will retrieve current screen component's id, if any.
+	 * @param {int | array of int}   items_ids   If none provided, will refresh all component items.
+	 * @param {JSON Object} options :
+	 *	- success {callback}
+	 *	- error {callback}
+	 *	- autoformat_answer {boolean} If true (default), the answer returned to the success
+	 *	  callback is automatically formated to return significant data (array of items). If false, the full
+	 *	  liveQuery answer is returned no matter what.
+	 *	- refresh_type {string} Can be:
+	 *		 -- "update" : merge new with existing component data,
+	 *       -- "replace" : delete current component data, empty the corresponding global, and replace with new
+	 *       -- "replace-keep-global-items" (default) : for list components : replace component items ids and merge global items
+	 *  - persistent {boolean} (default false). If true, new data is stored in local storage.
+	 */
+	themeApp.refreshComponentItems = function ( component_id, items_ids, options ) {
+		
+		if ( component_id === undefined ) {
+			component_id = TemplateTags.getCurrentComponentId();
+		}
+		
+		var existing_component = App.components.get( component_id );
+    	if( existing_component ) {
+
+			//If no item id provided, refresh all component items :
+			if ( items_ids === undefined || items_ids === '' || items_ids === 0 || ( _.isArray( items_ids ) && items_ids.length === 0 ) ) {
+				var component_data = existing_component.get('data');
+				if ( component_data && component_data.ids ) {
+					items_ids = component_data.ids;
+				} else {
+					items_ids = null;
+				}
+			}
+
+			if ( items_ids !== null ) {
+
+				themeApp.liveQuery(
+					{
+						wpak_component_slug : component_id,
+						wpak_query_action : 'get-items',
+						wpak_items_ids : items_ids
+					},
+					{	
+						type : options.hasOwnProperty( 'refresh_type' ) ? options.refresh_type : 'replace-keep-global-items',
+						persistent : options.hasOwnProperty( 'persistent' ) ? options.persistent : false,
+						auto_interpret_result : true,
+						
+						//Callbacks :
+						success : function ( answer ) {
+							if ( options !== undefined && options.success ) {
+								//If no globals in answer, return full answer
+								var refreshed_items = answer;
+
+								if ( !options.hasOwnProperty( 'autoformat_answer' ) || options.autoformat_answer === true ) {
+									if ( answer.globals ) {
+										//If globals in answer, return items indexed on globals :
+										refreshed_items = answer.globals;
+										var globals = [];
+										_.each( answer.globals, function ( items, global ) {
+											globals.push( global );
+										} );
+										if ( globals.length === 1 ) {
+											//If only one global returned, return directly the corresponding items
+											if ( _.isArray( items_ids ) ) {
+												refreshed_items = answer.globals[globals[0]];
+											} else {
+												//If only one item asked, return only this item :
+												refreshed_items = _.first( _.toArray( answer.globals[globals[0]] ) );
+											}
+										}
+									}
+								}
+
+								options.success( refreshed_items );
+							}
+						},
+						error : function ( answer_error ) {
+							if ( options !== undefined && options.error ) {
+								options.error( answer_error );
+							}
+						}
+					}
+				);
+
+			}
+		}
+	};
+
+	/************************************************
+	 * Dynamic data from synchronization web service
+	 */
+	
+	themeApp.getDynamicData = function ( field ) {
+		return DynamicData.getDynamicData( field );
+	};
+
+	/************************************************
+	 * DOM element auto class
+	 */
+
+	/**
+	 * Sets class to the given DOM element according to the given current screen.
+	 * If element is not provided, defaults to <body>.
+	 */
+	var setContextClass = function( current_screen, element_id ) {
+		if ( !_.isEmpty( current_screen ) ) {
+			var $element = element_id == undefined ? $( 'body' ) : $( '#' + element_id );
+			$element.removeClass( function( index, css ) {
+				return ( css.match( /\app-\S+/g ) || [ ] ).join( ' ' );
+			} );
+			$element.addClass( 'app-' + current_screen.screen_type );
+			$element.addClass( 'app-' + current_screen.fragment );
+		}
+	};
+
+	/**
+	 * Adds class on given DOM element according to the current screen.
+	 * If element is not provided, defaults to <body>.
+	 * @param activate Set to true to activate
+	 */
+	themeApp.setAutoContextClass = function( activate, element_id ) {
+		if ( activate ) {
+			RegionManager.on( 'screen:showed', function( current_screen ) {
+				setContextClass( current_screen, element_id );
+			} );
+			setContextClass( App.getCurrentScreenData(), element_id );
+		}
+		//TODO : handle deactivation!
+	};
+
+
+	/************************************************
+	 * Screen transitions
+	 */
+
+	/**
+	 * Returns the transition direction ("next-screen", "previous-screen", "default" or customized) according
+	 * to current and previous screen.
+	 * Use this to know the current transition direction when hooking on 'screen-transition' action hook.
+	 * And use the following 'transition-direction' hook to define your own kind of transition directions.
+	 *
+	 * @param {Object} current_screen : The screen we're leaving.
+	 * @param {Object} next_screen : The screen that is going to be displayed after transition
+	 * @returns {String} Transition direction (default 'default', 'next-screen' and 'previous-screen' but
+	 * can be customized with the "transition-direction" filter).
+	 */
+	themeApp.getTransitionDirection = function( current_screen, next_screen ) {
+		var transition = 'default';
+
+		if ( next_screen.screen_type == 'list' || next_screen.screen_type == 'custom-component' ) {
+			if ( current_screen.screen_type == 'single' ) {
+				transition = 'previous-screen';
+			} else {
+				transition = 'default';
+			}
+		} else if ( next_screen.screen_type == 'single' ) {
+			if ( current_screen.screen_type == 'list' || current_screen.screen_type == 'custom-component' ) {
+				transition = 'next-screen';
+			} else if ( current_screen.screen_type == 'comments' ) {
+				transition = 'previous-screen';
+			} else {
+				transition = 'default';
+			}
+		} else if ( next_screen.screen_type == 'comments' ) {
+			transition = 'next-screen';
+		} else {
+			transition = 'default';
+		}
+
+		/**
+		 * "transition-direction" filter : use this filter to customize transitions
+		 * directions according to what are current (ie asked) and previous screen.
+		 *
+		 * @param {string} Transition direction to override if needed.
+		 * @param {Object} current_screen : The screen we're leaving.
+		 * @param {Object} next_screen : The screen that is going to be displayed after transition.
+		 */
+		var transition = Hooks.applyFilters( 'transition-direction', transition, [current_screen, next_screen] );
+
+		return transition;
+	};
+
+	/************************************************
+	 * App network management
+	 */
+
+	/**
+	 * Retrieve network state : "online", "offline" or "unknown"
+	 * If full_info is passed and set to true, detailed connexion info is
+	 * returned (Wifi, 3G etc...).
+	 *
+	 * @param boolean full_info Set to true to get detailed connexion info
+	 * @returns string "online", "offline" or "unknown"
+	 */
+	themeApp.getNetworkState = function(full_info) {
+		return PhoneGap.getNetworkState(full_info);
+	};
+
+	/************************************************
+	 * App custom pages and custom routes management
+	 */
+
+	themeApp.showCustomPage = function( template, data, fragment, silent ) {
+		if ( template === undefined ) {
+			template = 'custom';
+		}
+		if ( data === undefined ) {
+			data = {};
+		}
+		if ( fragment === undefined ) {
+			fragment = 'auto-custom-page';
+		}
+		if ( silent === undefined ) {
+			silent = true;
+		}
+		App.showCustomPage( template, data, fragment, silent );
+	};
+
+	themeApp.addCustomRoute = function( fragment, template, data ) {
+		fragment = fragment.replace('#','');
+		if ( template === undefined ) {
+			template = 'custom';
+		}
+		if ( data === undefined ) {
+			data = {};
+		}
+		App.addCustomRoute( fragment, template, data );
+	};
+
+	themeApp.removeCustomRoute = function( fragment ) {
+		fragment = fragment.replace('#','');
+		App.removeCustomRoute( fragment );
+	};
+
+	/**************************************************
+	 * Retrieve internal app data that can be useful in themes
+	 */
+
+	/**
+	 * Retrieves a list of items (posts for example) from local storage
+	 *
+	 * @param {array} items_ids IDs of the items to retrieve
+	 * @param {string} global_key (Optional) global to retrieve the items from: 'posts' (default) or 'pages'.
+	 * @param {string} result_type 'slice' to retrieve a Backbone Collection (default), 'array' to retrieve an array.
+	 * @returns {Backbone Collection | Array | null} items list
+	 */
+	themeApp.getItems = function( items_ids, global_key, result_type ) {
+		var items = null;
+
+		global_key = global_key || 'posts';
+		result_type = result_type || 'slice';
+
+		switch( result_type ) {
+			case 'slice' :
+				items = App.getGlobalItemsSlice( global_key, items_ids );
+				break;
+			case 'array' :
+				items = App.getGlobalItems( global_key, items_ids );
+				break;
+		}
+
+		return items;
+	};
+
+	/**
+	 * Retrieves an item (post for example) from local storage
+	 *
+	 * @param {int} item_id Post ID of the post to retrieve
+	 * @param {string} global_key (Optional) global to retrieve the item from: 'posts' (default) or 'pages'.
+	 * @returns {JSON Object | null} item (post or page) object if found, null if no post found with the given item_id.
+	 */
+	themeApp.getItem = function( item_id, global_key ) {
+
+		global_key = global_key || 'posts';
+
+		return App.getGlobalItem( global_key, item_id );
+	};
+	
+	/**
+	* Retrieve items (posts/pages etc) from remote server and merge them into existing app's items.
+	* 
+	* @param Array items array of ids of pages/posts to retrieve. 
+	* @param JSON Object options:
+	*  - component_id:   Int (optional) Slug of the component we want to retrieve items for.
+	*                    If not provided, the first component of "component_type" found
+	*                    will be used.
+	*  - component_type: String (optional) Type of component ("posts-list", "pages") we want to
+	*                    retrieve items for. Only useful if component_id is not provided.
+	*                    If not provided, defaults to "posts-list".
+	*  - persistent:     Boolean (optional) Whether to persist retrieved items to local storage.
+	*                    Defaults to true.
+	*  - success:        Callback (optional) Called if items are retrieved successfully
+	*  - error:          Callback (optional) Called if an error occured while retrieving items from server.
+	*                    App error events are also triggered in that case.
+	*/
+	themeApp.getItemsFromRemote = function( items_ids, options ) {
+		App.getItemsFromRemote( items_ids, options );
+	};
+
+	/**
+     * Retrieves current screen infos
+	 *
+	 * (Alias of theme-tpl-tags::getCurrentScreen(): because getting current
+	 * screen is needed very often, we need it both sides)
+	 *
+     * @return JSON object containing :
+     * - screen_type : list, single, comments, page
+     * - fragment : unique screen url id (what's after # in url)
+     * - component_id : component slug id, if displaying a component screen (list, page)
+     * - item_id : current item id, if displaying single content (post,page)
+	 * - label : current item label (title of component, title of post)
+     * - data : contains more specific data depending on which screen type is displayed
+     * 	> total : total number of posts for lists
+     * 	> query : query vars used to retrieve contents (taxonomy, terms...)
+     * 	> ids : id of posts displayed in lists
+     * 	> any other specific data depending on currently displayed component
+     */
+    themeApp.getCurrentScreen = function() {
+        return App.getCurrentScreenData();
+    };
+	
+	/**
+	 * Retrieves the screen that is before current screen in app's history.
+	 * For example if your history is "Screen A > Screen B > Screen C then back button to Screen B",
+	 * getPreviousScreenInHistory() returns Screen A, which is where we will go from Screen B
+	 * if we press back button.
+	 * To retrieve Screen C in this case, you would use getPreviousScreen().
+	 * 
+	 * @returns {screen_type:string}
+	 */
+	themeApp.getPreviousScreenInHistory = function() {
+		return App.getPreviousScreenData();
+	};
+	
+	/**
+	 * Retrieves the screen that was displayed just before current screen.
+	 * For example if your history is "Screen A > Screen B > Screen C then back button to Screen B",
+	 * Screen C has been poped from history stack but you can still access it via 
+	 * this getPreviousScreen() function.
+	 * 
+	 * @returns {Screen object} Previous screen 
+	 * (see themeApp.getCurrentScreen() for screen object structure)
+	 */
+	themeApp.getPreviousScreen = function() {
+		return App.getPreviousScreenMemoryData();
+	};
+
+	/**
+	* Returns app's current history stack.
+	* For example if your history is "Screen A > Screen B > Screen C", 
+	* the history stack is [Screen object A, Screen object B, Screen object C].
+	* Then if you press back button, the history stack becomes
+	* [Screen object A, Screen object B] (Screen object C has been poped).
+	* 
+	* @returns {Array} App's history stack: array of screen objects 
+	* (see themeApp.getCurrentScreen() for screen object structure)
+	*/
+	themeApp.getHistory = function() {
+		return App.getHistory();
+	};
+	
+	/**
+	 * Returns the last action that was made on app's history stack (push, pop, empty or empty-then-push).
+	 * For example if your history is "List > Single then go to Single's Comments screen",
+	 * the last history action is a "push" (Comments screen was pushed after Single screen in the history stack).
+	 * 
+	 * Knowing last history action is particularly useful when implementing custom transitions
+	 * for example to differentiate transitions between "going from Single A to Single B" and 
+	 * "going back from Single B to Single A".
+	 * 
+	 * Note that the mapping between "Going from a screen to another screen" and "what
+	 * history action is triggered" is customizable using the "make-history" JS filter.
+	 * 
+	 * @returns {String} Last history action : push, pop, empty or empty-then-push
+	 */
+	themeApp.getLastHistoryAction = function() {
+		return App.getLastHistoryAction();
+	};
+
+	/**
+	 * Retrieves useful data corresponding to the object that is currently displayed.
+	 * The returned set of data is a custom selection of data that can be found in
+	 * "Screen data" (ThemeApp.getCurrentScreen()) and "View data" (RegionManager.getCurrentView()).
+	 *
+	 * @returns JSON Object depending on current screen:
+	 * - for lists:             object containing: title (list title), posts (list of posts), ids (=post ids), total, component_id, query
+	 * - for single:            post object: id, post_type, date, title, content, excerpt, thumbnail, author, nb_comments, slug, permalink
+	 * - for comments:          object containing: post (post we retrieve the comments for) and comments (list of comments for this post)
+	 * - for pages:             page object: id, post_type, date, title, content, excerpt, thumbnail, author, nb_comments, slug, permalink, tree_data, component (page's component object)
+	 * - for custom pages:      object containing: id, route, title (if custom page data contains a 'title' property), data (custom page data), template.
+	 * - for custom components: object containing: component_id, title, route, data, template
+	 * - for all:               field 'screen_type': can be: 'list', 'single', 'comments', 'page', 'custom-page', 'custom-component'
+	 */
+	themeApp.getCurrentScreenObject = function() {
+		var screen_object = {};
+
+		var screen_data = App.getCurrentScreenData();
+		var current_view = RegionManager.getCurrentView();
+
+		switch( screen_data.screen_type ) {
+			case 'list':
+				//For lists, build a custom screen object from screen data and current view data:
+				screen_object = {
+					title: screen_data.label,
+					component_id: screen_data.component_id,
+					posts: current_view.posts.toJSON()
+				};
+				_.extend( screen_object, screen_data.data ); //Adds ids, query, total
+				break;
+			case 'single':
+				//For single, just return the current post object:
+				if ( screen_data.data.post ) {
+					screen_object = screen_data.data.post;
+				} else if ( screen_data.data.item ) {
+					screen_object = screen_data.data.item;
+				}
+				break;
+			case 'comments':
+				//For comments, build a custom screen object from screen data and current view data:
+				screen_object = {
+					post: current_view.post.toJSON(),
+					comments: current_view.comments.toJSON()
+				};
+				break;
+			case 'page':
+				//For page, just return the current page object:
+				screen_object = screen_data.data.post;
+				screen_object.component = TemplateTags.getComponent( screen_data.component_id );
+				break;
+			case 'custom-page':
+				//For custom pages, return page id, page route, page custom data, and page template:
+				//(id and route are the same thing, because a custom page is identified by its route)
+				screen_object = {
+					id: screen_data.item_id,
+					route: screen_data.item_id,
+					title: current_view.custom_page_data && current_view.custom_page_data.hasOwnProperty( 'title' ) ? current_view.custom_page_data.title : '',
+					data: current_view.custom_page_data ? current_view.custom_page_data : {},
+					template: current_view.template_name
+				};
+				break;
+			case 'custom-component':
+				//For custom components, return component_id, title, route, data, template:
+				screen_object = {
+					component_id: screen_data.component_id,
+					title: screen_data.label,
+					route: screen_data.fragment,
+					data: screen_data.data,
+					template: current_view.template_name
+				};
+				break;
+		};
+
+		screen_object.screen_type = screen_data.screen_type;
+
+        return screen_object;
+    };
+	
+	/**
+	 * Re-render Menu view
+	 */
+	themeApp.renderMenu = function() {
+		var menu_view = RegionManager.getMenuView();
+		if ( menu_view ) {
+			menu_view.render();
+		}
+	};
+
+	//Use exports so that theme-tpl-tags and theme-app (which depend on each other, creating
+	//a circular dependency for requirejs) can both be required at the same time
+	//(in theme functions.js for example) :
+	_.extend( exports, themeApp );
+} );
