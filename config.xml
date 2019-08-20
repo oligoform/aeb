@@ -34,7 +34,7 @@
 	<plugin name="cordova-plugin-device" source="npm" />
 	<plugin name="cordova-plugin-statusbar" source="npm" />
 	<plugin name="cordova-build-architecture" spec="https://github.com/MBuchalik/cordova-build-architecture.git#v1.0.1" source="git" />
-	<plugin name="cordova-plugin-geolocation" spec="~4.0.2" />
+	<plugin name="cordova-plugin-geolocation" source="npm" />
 
 	<!-- Whitelist policy  -->
 	<access origin="*" />
