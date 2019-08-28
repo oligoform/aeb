@@ -37,7 +37,6 @@ define( function( require ) {
 
 	var authenticationData = new AuthenticationDataModel( { id: 'Authentication-' + Config.app_slug } );
 	authenticationData.fetch();
-
 	var ws_url = WsToken.getWebServiceUrlToken( 'authentication' ) + '/authentication/';
 
 	var authentication = { };
@@ -245,7 +244,6 @@ define( function( require ) {
 						} else {
 							cb_error( 'wrong-hmac' );
 						}
-
 					} else if ( data.hasOwnProperty( 'auth_error' ) ) {
 						cb_error( data.auth_error );
 					}  else {
@@ -279,7 +277,6 @@ define( function( require ) {
 
 			var encrypt = new JSEncrypt();
 			encrypt.setPublicKey( public_key );
-
 			var to_encrypt = {
 				user : user,
 				pass : pass,
@@ -311,13 +308,11 @@ define( function( require ) {
 
 											//Memorize returned user permissions
 											authenticationData.set( 'permissions', data.permissions );
-
 											//Memorize returned user info
 											authenticationData.set( 'info', data.info );
 
 											//Save all this to local storage
 											authenticationData.save();
-
 											Utils.log( 'User "' + user + '" logged in successfully', authentication.getCurrentUser() );
 
 											cb_ok( { user: user, permissions: data.permissions, info: data.info } );
@@ -335,7 +330,6 @@ define( function( require ) {
 							} else {
 								cb_error( 'no-auth-error' );
 							}
-
 						} else {
 							cb_error( 'wrong-auth-data' );
 						}
@@ -496,7 +490,6 @@ define( function( require ) {
 			 * @param    JSON Object     current_user  Currently connected user
 			 */
 			user_role_ok = Hooks.applyFilters( 'current-user-role', user_role_ok, [role, authenticationData.get( 'permissions' ), authentication.getCurrentUser()] );
-
 		}
 		return user_role_ok;
 	};
@@ -508,22 +501,16 @@ define( function( require ) {
 	 * automatically calls logUserOut() to trigger logout events.
 	 *
 	 * @param {function} cb_auth_ok     Called if the user is connected ok
-	 * @param {function} cb_auth_error  Called if the user is not connected
-	 */
-	authentication.checkUserAuthenticationFromRemote = function( cb_auth_ok, cb_auth_error ) {
-
-		var cb_ok = function( data ) {
-
+			
 			var user = authentication.getCurrentUser();
 			Utils.log( 'User authentication remote check ok : user "'+ user.login +'" connected', user );
-
+			
 			if ( cb_auth_ok !== undefined ) {
 				cb_auth_ok( data );
 			}
 		};
 
 		var cb_error = function( error ) {
-
 			var message = '';
 			switch ( error ) {
 				case 'user-connection-expired':
@@ -534,7 +521,6 @@ define( function( require ) {
 					break;
 			}
 			Utils.log( 'User authentication remote check : '+ message);
-
 			if ( cb_auth_error !== undefined ) {
 				cb_auth_error( error );
 			}
@@ -567,7 +553,6 @@ define( function( require ) {
 								authenticationData.set( 'permissions', data.permissions );
 								authenticationData.set( 'info', data.info );
 								authenticationData.save();
-
 								cb_ok( authentication.getCurrentUser() );
 
 							} else if ( data.hasOwnProperty( 'auth_error' ) ) {
@@ -693,7 +678,6 @@ define( function( require ) {
 				logout_info_type = 'unknown';
 				break;
 		}
-
 		var logout_info = {
 			type: 'authentication-info', //So that theme info event subtype is set
 			user: authenticationData.get( 'user_login' ), //This is what the user used to login: can be login or email

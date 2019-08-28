@@ -287,7 +287,6 @@ define(function (require) {
                     console.log('error')
                 });
 
-
                 //Memorize map position and zoom when zooming, moving and leaving the map:
                 this.get('map_leaflet').on('zoomend', this.saveCurrentData);
                 this.get('map_leaflet').on('moveend', this.saveCurrentData);
