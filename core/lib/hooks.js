@@ -1,1 +1,185 @@
-;define(function(require){'use strict';var $=require('jquery'),i=require('underscore'),t={};var n={};var r={};var o=function(e){var r=0,n,i,t;if(e.length==0)return r;for(n=0,t=e.length;n<t;n++){i=e.charCodeAt(n);r=((r<<5)-r)+i;r|=0};return r},a=function(e){return o(e.toString())};t.applyFilters=function(e,r,t,o){if(n.hasOwnProperty(e)){var a=n[e];a=i.sortBy(a,function(e){return e.priority});t.unshift(r);for(var c=0;c<a.length;c++){r=a[c].callback.apply(o,t);t.shift();t.unshift(r)}};return r};t.addFilter=function(e,i,r){if(r===undefined){r=10};var t={callback:i,priority:r,callback_id:a(i)};if(!n.hasOwnProperty(e)){n[e]=[t]}else{n[e].push(t)}};t.removeFilter=function(e,r,t){if(n.hasOwnProperty(e)){if(r===undefined){delete n[e]}else{var c=n[e],o=a(r);if(t===undefined){c=i.reject(c,function(e){return e.callback_id==o})}else{c=i.reject(c,function(e){return e.callback_id==o&&e.priority==t})};n[e]=c}}};t.doActions=function(n,t,e,u){e=(e===undefined||!i.isObject(e))?{}:e;var f=$.Deferred();if(r.hasOwnProperty(n)){var a=r[n];a=i.sortBy(a,function(e){return e.priority});var d=[];for(var o=0;o<a.length;o++){var l=$.Deferred();d.push(l);t.push(l);t.push(e);e=a[o].callback.apply(u,t);if(e!==undefined&&i.isObject(e)){if(e.break_actions&&e.break_actions===!0){break}};t.pop();t.pop()};$.when.apply($,d).done(function(){f.resolve(e)})}else{f.resolve(e)};return f.promise()};t.addAction=function(e,i,n){if(n===undefined){n=10};var t={callback:i,priority:n,callback_id:a(i)};if(!r.hasOwnProperty(e)){r[e]=[t]}else{r[e].push(t)}};t.removeAction=function(e,n,t){if(r.hasOwnProperty(e)){if(n===undefined){delete r[e]}else{var c=r[e],o=a(n);if(t===undefined){c=i.reject(c,function(e){return e.callback_id==o})}else{c=i.reject(c,function(e){return e.callback_id==o&&e.priority==t})};r[e]=c}}};return t});
+define( function( require ) {
+
+	/**
+	 * Implements a Javascript Hook logic (filters and actions) inspired by WordPress Hooks
+	 */
+
+	"use strict";
+
+	var $ = require( 'jquery' );
+	var _ = require( 'underscore' );
+
+	var hooks = {};
+
+	var filters = {};
+	var actions = {};
+
+	var hash_string = function( string_to_hash ) {
+		var hash = 0, i, chr, len;
+		if ( string_to_hash.length == 0 )
+			return hash;
+		for ( i = 0, len = string_to_hash.length; i < len; i++ ) {
+			chr = string_to_hash.charCodeAt( i );
+			hash = ( ( hash << 5 ) - hash ) + chr;
+			hash |= 0; // Convert to 32bit integer
+		}
+		return hash;
+	};
+	
+	var get_callback_id = function( callback ) {
+		return hash_string( callback.toString() );
+	};
+
+	hooks.applyFilters = function( filter, value, params, context ) {
+		if ( filters.hasOwnProperty( filter ) ) {
+
+			var filters_array = filters[filter];
+			filters_array = _.sortBy( filters_array, function( filter_object ) {
+				return filter_object.priority;
+			} );
+
+			params.unshift( value );
+			for ( var i = 0; i < filters_array.length; i++ ) {
+				value = filters_array[i].callback.apply( context, params );
+				params.shift();
+				params.unshift( value );
+			}
+		}
+		return value;
+	};
+
+	hooks.addFilter = function( filter, callback, priority ) {
+		if ( priority === undefined ) {
+			priority = 10;
+		}
+		var filter_object = { callback: callback, priority: priority, callback_id: get_callback_id( callback ) };
+		if ( !filters.hasOwnProperty( filter ) ) {
+			filters[filter] = [ filter_object ];
+		} else {
+			filters[filter].push( filter_object );
+		}
+	};
+
+	hooks.removeFilter = function( filter, callback, priority ) {
+		if ( filters.hasOwnProperty( filter ) ) {
+			if ( callback === undefined ) {
+				delete filters[filter];
+			} else {
+				var filters_array = filters[filter];
+				var callback_id = get_callback_id( callback );
+				if ( priority === undefined ) {
+					filters_array = _.reject(
+						filters_array,
+						function( filter_object ) {
+							return filter_object.callback_id == callback_id;
+						}
+					);
+				} else {
+					filters_array = _.reject(
+						filters_array,
+						function( filter_object ) {
+							return filter_object.callback_id == callback_id && filter_object.priority == priority;
+						}
+					);
+				}
+				filters[filter] = filters_array;
+			}
+		}
+	};
+
+	hooks.doActions = function( action, params, filtered_params, context) {
+
+		filtered_params = ( filtered_params === undefined || !_.isObject( filtered_params ) ) ? {} : filtered_params;
+
+		var action_deferred = $.Deferred();
+		
+		if ( actions.hasOwnProperty( action ) ) {
+
+			var actions_array = actions[action];
+			actions_array = _.sortBy( actions_array, function( action_object ) {
+				return action_object.priority;
+			} );
+
+			var deferred_array = [];
+			
+			for ( var i = 0; i < actions_array.length; i++ ) {
+
+				//Pass a deferred to each action params so that we can do asynchrone actions : 
+				var deferred = $.Deferred();
+				deferred_array.push( deferred );
+				params.push( deferred );
+				
+				params.push( filtered_params );
+
+				filtered_params = actions_array[i].callback.apply( context, params );
+				if ( filtered_params !== undefined && _.isObject( filtered_params ) ) {
+					//The action can return a special param called "break_actions" to stop actions execution :
+					if ( filtered_params.break_actions && filtered_params.break_actions === true ) {
+						//The action asked to be the last one executed. Respect that :
+						break;
+					}
+				}
+
+				params.pop(); //remove filtered_params
+				params.pop(); //remove deferred
+			}
+
+			//Once all actions' deferred are done, resolve the main action deferred :
+			$.when.apply( $, deferred_array ).done( function() {
+				action_deferred.resolve( filtered_params );
+				//NOTE : filtered_params will be usable here ONLY if actions callback are NOT ASYNCHRONE :
+				//TODO : see if there would be a way to set the filtering logic among
+				//the $.when.apply().done() chain...
+			} );
+			//TODO : see if we can handle a .fail here
+			
+		} else {
+			
+			action_deferred.resolve( filtered_params );
+			
+		}
+		
+		return action_deferred.promise();
+	};
+
+	hooks.addAction = function( action, callback, priority ) {
+		if ( priority === undefined ) {
+			priority = 10;
+		}
+		var action_object = { callback: callback, priority: priority, callback_id: get_callback_id( callback ) };
+		if ( !actions.hasOwnProperty( action ) ) {
+			actions[action] = [ action_object ];
+		} else {
+			actions[action].push( action_object );
+		}
+	};
+
+	hooks.removeAction = function( action, callback, priority ) {
+		if ( actions.hasOwnProperty( action ) ) {
+			if ( callback === undefined ) {
+				delete actions[action];
+			} else {
+				var actions_array = actions[action];
+				var callback_id = get_callback_id( callback );
+				if ( priority === undefined ) {
+					actions_array = _.reject(
+						actions_array,
+						function( action_object ) {
+							return action_object.callback_id == callback_id;
+						}
+					);
+				} else {
+					actions_array = _.reject(
+						actions_array,
+						function( action_object ) {
+							return action_object.callback_id == callback_id && action_object.priority == priority;
+						}
+					);
+				}
+				actions[action] = actions_array;
+			}
+		}
+	};
+
+	return hooks;
+} );

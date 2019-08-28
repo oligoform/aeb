@@ -1,1 +1,2139 @@
-;define(function(require,exports){'use strict';var $=require('jquery'),o=require('underscore'),y=require('backbone'),j=require('core/models/components'),A=require('core/models/globals'),W=require('core/models/navigation'),G=require('core/models/options'),g=require('core/models/items'),x=require('core/models/comments'),D=require('core/models/custom-page'),i=require('root/config'),r=require('core/app-utils'),s=require('core/lib/hooks'),u=require('core/stats'),I=require('core/app-dynamic-data'),E=require('core/addons-internal'),h=require('core/lib/encryption/token'),w=require('core/modules/deep-link'),e={};var p=o.extend({},y.Events);e.on=function(e,t){p.on(e,t)};e.triggerError=function(e,t,n){p.trigger('error:'+e,t);r.log('App error event ['+e+']'+(t.hasOwnProperty('message')?' '+t.message:''),t);if(n!=undefined){t=o.extend({event:'error:'+e,id:e},t);n(t)}};e.triggerInfo=function(e,t,n){switch(e){case'no-content':p.trigger('info:no-content');break;case'app-launched':var r=u.getStats();p.trigger('info:app-ready',{stats:r});if(r.count_open==1){p.trigger('info:app-first-launch',{stats:r})};if(r.version_diff.diff!=0){p.trigger('info:app-version-changed',{stats:r})};break;default:p.trigger('info:'+e,t);if(n!=undefined){t=o.extend({event:'info:'+e,id:e},t);n(t)};break}};var F=null,d={};e.getCurrentCustomPage=function(){return F};e.showCustomPage=function(t,n,o,r){var a={template:t,data:n};if(o!==undefined){a.id=o};F=new D(a);if(r===!0){e.router.execute_route_silently(e.getScreenFragment('custom-page'));e.router.navigate(o,{trigger:!1})}else{e.router.navigate(e.getScreenFragment('custom-page'),{trigger:!0})}};e.addCustomRoute=function(e,t,n){e=r.removeTrailingSlash(e);d[e]={template:t,data:n}};e.removeCustomRoute=function(e){e=r.removeTrailingSlash(e);if(d.hasOwnProperty(e)){delete d[e]}};e.getCustomRoute=function(e){var t={};e=r.removeTrailingSlash(e);if(d.hasOwnProperty(e)){t=d[e]};return t};var v={'refresh-at-app-launch':!0,'go-to-default-route-after-refresh':!0,'custom-screen-rendering':!1,'use-html5-pushstate':!1};e.getParam=function(e){var t=null;if(v.hasOwnProperty(e)){t=v[e]};return t};e.setParam=function(e,t){if(v.hasOwnProperty(e)){v[e]=t}};e.router=null;e.silentlyAddRouteToAppHistory=function(t){var n=e.router.getRouteTypeAndParameters(t);if(n){var o=e.router.getRouteData(n.type,n.parameters);e.setQueriedScreen(o.screen_data);e.addQueriedScreenToHistory();r.log('Silently added route to history: '+t)}};e.resetDefaultRoute=function(t){var n='',t=t!==undefined&&t===!0;if(e.navigation.length>0){var a=e.navigation.first().get('component_id');n=e.getScreenFragment('component',{component_id:a})}else{if(e.components.length){var o=e.components.first();n=e.getScreenFragment('component',{component_id:o.id})}else{r.log('No menu item, no component found. Could not set default route.')}};n=s.applyFilters('default-route',n,[u.getStats(),t]);if(n!=''){e.router.setDefaultRoute(n)};return n};var C=!1;e.setIsLaunching=function(e){C=e};e.isLaunching=function(){return C};e.launchRouting=function(){var o=e.resetDefaultRoute(!0),n=o,p=w.getLaunchRoute(),g=window.location.hash,a=window.location.pathname,t='',l=!1;if(p.length>0){l=!0;t=p;e.setParam('refresh-at-app-launch',!1)}else if(g.length>0){t=g;e.setParam('refresh-at-app-launch',!1)}else if(e.getParam('use-html5-pushstate')&&a.length>0&&a.indexOf(i.app_path)===0){t=a.replace(i.app_path,'');if(t.length>0){t=r.addTrailingSlash(t);if(t!==o){e.setParam('refresh-at-app-launch',!1)}}};if(t.length>0&&t!==n){var c=s.applyFilters('add-default-route-before-asked-route',!0,[t,o,n]);if(c){e.silentlyAddRouteToAppHistory(o)};n=t};n=s.applyFilters('launch-route',n,[u.getStats()]);s.doActions('pre-start-router',[n,u.getStats()]).done(function(){w.reset();var t={};if(e.getParam('use-html5-pushstate')){t.pushState=!0;t.root=i.app_path};if(l){t.silent=!0};if(n.length>0&&o.length>0){y.history.start(t);if(n===o){e.router.default_route()}else if(l){e.router.navigate(n,{trigger:!0})}}else{t.silent=!0;y.history.start(t);e.router.navigate('#wpak-none',{trigger:!0})}})};e.getScreenFragment=function(t,n){var o='',r=e.getParam('use-html5-pushstate')?'':'#',a=e.getParam('use-html5-pushstate')?'/':'';switch(t){case'single':o=r+'single/'+n.global+'/'+n.item_id+a;break;case'page':o=r+'page/'+n.component_id+'/'+n.item_id+a;break;case'comments':o=r+'comments-'+n.item_id+a;break;case'component':var s=e.getComponentData(n.component_id);if(s){o=s.type!=='page'?r+'component-'+s.id+a:r+'page/'+s.id+'/'+s.data.root_id+a};break;case'custom-page':o=r+'custom-page'+a;break};return o};var l=[],a={};var O={};var k='',b=function(e){l.push(e)},P=function(e){return{screen_type:e.screen_type,component_id:e.component_id,item_id:e.item_id,fragment:e.fragment,data:e.hasOwnProperty('data')?e.data:{},global:e.hasOwnProperty('global')?e.global:'',label:e.hasOwnProperty('label')?e.label:''}};e.setQueriedScreen=function(e){e=o.extend(e,{fragment:y.history.fragment});e=s.applyFilters('queried-screen',e,[]);a=P(e)};e.getQueriedScreen=function(){return a};e.addQueriedScreenToHistory=function(t){var c=t!=undefined&&t==!0,o=e.getCurrentScreenData(),r=e.getPreviousScreenData();O=o;if(o.screen_type!=a.screen_type||o.component_id!=a.component_id||o.item_id!=a.item_id||o.fragment!=a.current_fragment){if(c){l=[]};var n='';if(a.fragment==o.fragment){n='none'}else if(a.screen_type=='list'){n='empty-then-push'}else if(a.screen_type=='single'){n='push';if(o.screen_type=='comments'){if(r.screen_type=='single'&&r.item_id==a.item_id){n='pop'}else{n='empty-then-push'}}}else if(a.screen_type=='page'){if(o.screen_type=='page'&&o.component_id==a.component_id&&!a.data.is_tree_root){if(r.screen_type=='page'&&r.component_id==a.component_id&&r.item_id==a.item_id){n='pop'}else{n='push'}}else if(o.screen_type=='comments'){if(r.screen_type=='page'&&r.item_id==a.item_id){n='pop'}else{n='empty-then-push'}}else{n='empty-then-push'}}else if(a.screen_type=='comments'){if((o.screen_type=='single'||o.screen_type=='page')&&o.item_id==a.item_id){n='push'}else{var p='posts',i=e.getGlobalItem('posts',a.item_id);if(!i){i=e.getGlobalItem('pages',a.item_id);if(i){p='pages'}};if(i){var g={screen_type:p==='posts'?'single':'page',component_id:'',item_id:a.item_id,global:p,data:{post:i},label:i.title,fragment:p==='posts'?e.getScreenFragment('single',{global:'posts',item_id:a.item_id}):''};b(P(g));n='push'}}}else if(a.screen_type=='custom-page'){n='empty-then-push'}else if(a.screen_type=='custom-component'){n='empty-then-push'}else{n='empty'}};n=s.applyFilters('make-history',n,[l,a,o,r]);k=n;switch(n){case'empty-then-push':l=[];b(a);break;case'empty':l=[];break;case'push':b(a);break;case'pop':l.pop();break}};e.getHistory=function(){return l.slice(0)};e.getLastHistoryAction=function(){return k};e.getCurrentScreenData=function(){var e={};if(l.length){e=l[l.length-1]};return e};e.getPreviousScreenData=function(){var e={};if(l.length>1){e=l[l.length-2]};return e};e.getPreviousScreenMemoryData=function(){return O};e.getPreviousScreenLink=function(){var t='',n=e.getPreviousScreenData();if(!o.isEmpty(n)){t='#'+n.fragment};return t};e.getCurrentScreenGlobal=function(t){var o=e.getCurrentScreenData(),n='';if(t!=undefined){n=t}else{if(o.screen_type=='comments'){var r=e.getPreviousScreenData();if(r.screen_type=='single'){n=r.global}}else{if(o.hasOwnProperty('global')&&o.global!=''){n=o.global}}};n=s.applyFilters('current-screen-global',n,[o,t]);return n};e.components=new j;e.navigation=new W;e.options=new G;e.comments=new x.CommentsMemory;var c=new A;e.globals={};e.addGlobalType=function(t){if(undefined===c.get(t)){r.log('app.addGlobalType info: adding a type to globals',{type:t});c.add({id:t});e.globals[t]=new g.Items([],{global:t})}};e.addGlobalItem=function(t,n){if(undefined===n.id){r.log('app.addGlobalItem error: undefined item.id',{item:n});return};if(undefined===c.get(t)){r.log('app.addGlobalItem info: '+t+' not known, adding it',{type:t,item:n});e.addGlobalType(t)};if(null===e.getGlobalItem(t,n.id)){r.log('app.addGlobalItem info: adding an item to globals',{type:t,item:n});e.globals[t].add(n)}};e.componentExists=function(t){return e.components.get(t)!==undefined};e.getComponents=function(t){var n=[];if(o.isObject(t)){if(t.type){n=e.components.where({type:t.type})}}else{n=e.components.toJSON()};return n};e.getNavigationComponents=function(t){var n=[];e.navigation.each(function(o){var r=e.components.get(o.get('component_id'));if(r){if(t.type){if(r.get('type')==t.type){n.push(r)}}else{n.push(r)}}});return n};e.sync=function(t,n,o){var a=o!=undefined&&o;e.components.fetch({'success':function(o,i,l){s.doActions('components-fetched',[o,i,l]).done(function(){if(o.length==0||a){f(t,n)}else{r.log('Components retrieved from local storage.',{components:o});e.navigation.fetch({'success':function(o,a,s){if(o.length==0){f(t,n)}else{r.log('Menu items retrieved from local storage.',{navigation:o});c.fetch({'success':function(o,a,s){if(o.length==0){f(t,n)}else{var l=function(t,n){return t.fetch({'success':function(t,o,r){e.globals[n]=t}})},i=[];o.each(function(e,t,n){var o=e.get('id'),r=new g.Items([],{global:o});i.push(l(r,o))});$.when.apply($,i).done(function(){if(e.globals.length==0){f(t,n)}else{r.log('Global items retrieved from local storage.',{globals:e.globals});t()}})}}})}}})}})}})};var f=function(t,n){if(e.isLaunching()){e.setParam('refresh-at-app-launch',!1)};p.trigger('refresh:start');var d=$.Deferred(),b=function(){t(d)},l=function(e){n(e,d)};d.always(function(e){p.trigger('refresh:end',e)});var v=h.getWebServiceUrlToken('synchronization'),f=v+'/synchronization/',y=s.applyFilters('web-service-params',{},['synchronization']);var a={timeout:40000,data:y};a=s.applyFilters('ajax-args',a,['synchronization']);a.url=i.wp_ws_url+f;a.type='GET';a.dataType='json';a.success=function(t){if(t.hasOwnProperty('result')&&t.result.hasOwnProperty('status')){if(t.result.status==1){if(t.hasOwnProperty('components')&&t.hasOwnProperty('navigation')&&t.hasOwnProperty('globals')&&t.hasOwnProperty('dynamic_data')){e.components.resetAll();o.each(t.components,function(t,n,o){e.components.add({id:n,label:t.label,type:t.type,data:t.data,global:t.global})});e.components.saveAll();e.navigation.resetAll();o.each(t.navigation,function(t,n,o){e.navigation.add({id:n,component_id:n,options:t})});e.navigation.saveAll();c.each(function(e,t,n){var o=e.get('id'),r=new g.Items([],{global:o});r.resetAll()});e.globals={};c.resetAll();o.each(t.globals,function(t,n,r){var a=new g.Items([],{global:n});a.resetAll();o.each(t,function(e,t){a.add(o.extend({id:t},e))});a.saveAll();e.globals[n]=a;c.add({id:n})});c.saveAll();e.comments.reset();u.incrementContentLastUpdate();I.setDynamicDataFromWebService(t.dynamic_data);E.setDynamicDataFromWebService(t.addons);if(t.components.length===0){e.triggerError('synchro:no-component',{type:'web-service',where:'app::syncWebService',message:'No component found for this App. Please add components to the App on WordPress side.',data:t},l)}else{r.log('Components, menu items and globals retrieved from online.',{components:e.components,navigation:e.navigation,globals:e.globals});b()}}else{e.triggerError('synchro:wrong-answer',{type:'web-service',where:'app::syncWebService',message:'Wrong "synchronization" web service answer',data:t},l)}}else if(t.result.status==0){e.triggerError('synchro:ws-return-error',{type:'web-service',where:'app::syncWebService',message:'Web service "synchronization" returned an error : ['+t.result.message+']',data:t},l)}else{e.triggerError('synchro:wrong-status',{type:'web-service',where:'app::syncWebService',message:'Wrong web service answer status',data:t},l)}}else{e.triggerError('synchro:wrong-format',{type:'web-service',where:'app::syncWebService',message:'Wrong web service answer format',data:t},l)}};a.error=function(t,n,o){e.triggerError('synchro:ajax',{type:'ajax',where:'app::syncWebService',message:n+': '+o,data:{url:i.wp_ws_url+f,jqXHR:t,textStatus:n,errorThrown:o}},l)};$.ajax(a)},q=function(t,n,r){var d=h.getWebServiceUrlToken('comments-post'),g=d+'/comments-post/'+t,p=new x.Comments,f=s.applyFilters('comments-globals',['posts','pages'],[t]),l=null,c='';f.every(function(n){l=e.globals[n].get(t);if(l!=undefined){c=n};return l===undefined});if(l!=undefined&&l!=null){var u=s.applyFilters('web-service-params',{},['get-post-comments']);var a={data:u};a=s.applyFilters('ajax-args',a,['get-post-comments']);a.url=i.wp_ws_url+g;a.type='GET';a.dataType='json';a.success=function(e){o.each(e.items,function(e,t,n){p.add(e)});l.set('nb_comments',p.length);l.save();n(p,l,c)};a.error=function(t,n,o){e.triggerError('comments:ajax',{type:'ajax',where:'app::fetchPostComments',message:n+': '+o,data:{url:i.wp_ws_url+g,jqXHR:t,textStatus:n,errorThrown:o}},r)};$.ajax(a)}else{e.triggerError('comments:post-not-found',{type:'not-found',where:'app::fetchPostComments',message:'Post '+t+' not found.'},r)}};e.getPostComments=function(t,n,o,a){a=a===!0;var s=e.comments.get(t);if(s&&!a){var i=s.get('post_comments'),l=s.get('post'),p=s.get('item_global');r.log('Comments retrieved from cache.',{comments:i,post:l,item_global:p});n(i,l,p)}else{q(t,function(o,a,s){r.log('Comments retrieved from online.',{comments:o,post:a,item_global:s});e.comments.addPostComments(t,a,s,o);n(o,a,s)},function(e){o(e)})}};e.getPostGlobal=function(t,n){var o=e.getCurrentScreenGlobal(n);return s.applyFilters('post-global',o,[t,n])};e.getMoreOfComponent=function(t,n,a,l){l=(l!==undefined)&&l===!0;var d=e.getCurrentScreenData(),v='';if(d.component_id&&e.componentExists(d.component_id)){v=d.component_id};l=s.applyFilters('use-standard-pagination',l,[v,d]);var u=e.components.get(t);if(u){var p=u.get('data');if(p.hasOwnProperty('ids')){var b=h.getWebServiceUrlToken('component'),f=b+'/component/'+t,w=o.last(p.ids),c={};if(l){var y=p.query.hasOwnProperty('pagination_page')&&p.query.pagination_page>0?parseInt(p.query.pagination_page):1;c.pagination_page=y+1}else{c.before_item=w};var c=s.applyFilters('web-service-params',c,['get-more-of-component']),g={data:c};g=s.applyFilters('ajax-args',g,['get-more-of-component']);g.url=i.wp_ws_url+f;g.type='GET';g.dataType='json';g.success=function(s){if(s.result&&s.result.status==1){if(s.component.slug==t){var i=s.component.global;if(e.globals.hasOwnProperty(i)){var g=o.difference(s.component.data.ids,p.ids);p.query.pagination_page=s.component.data.query.pagination_page;p.ids=o.union(p.ids,s.component.data.ids);u.set('data',p);var m=e.globals[i];o.each(s.globals[i],function(e,t){m.add(o.extend({id:t},e))});var l=[];o.each(g,function(e){l.push(m.get(e))});var c=p.total-p.ids.length,d=!o.isEmpty(s.component.data.query.is_last_page)?!0:c<=0;r.log('More content retrieved for component',{component_id:t,new_ids:g,new_items:l,component:u});e.triggerInfo('component:get-more',{new_items:l,is_last:d,nb_left:c,new_ids:g,global:i,component:u},n)}else{e.triggerError('getmore:global-not-found',{type:'not-found',where:'app::getMoreOfComponent',message:'Global not found : '+i},a)}}else{e.triggerError('getmore:wrong-component-id',{type:'not-found',where:'app::getMoreOfComponent',message:'Wrong component id : '+t},a)}}else{e.triggerError('getmore:ws-return-error',{type:'web-service',where:'app::getMoreOfComponent',message:'Web service "component" returned an error : ['+s.result.message+']'},a)}};g.error=function(t,n,o){e.triggerError('getmore:ajax',{type:'ajax',where:'app::getMoreOfComponent',message:n+': '+o,data:{url:i.wp_ws_url+f,jqXHR:t,textStatus:n,errorThrown:o}},a)};$.ajax(g)}}};var S=function(t,n,r,a){r=(r!==undefined)?r:'update';a=(a!==undefined)&&a===!0;var i={ok:!0,message:'',type:'',data:{}};if(r!=='update'&&r!=='replace'){i.ok=!1;i.type='bad-format';i.message='Wrong type : '+r;return i};if(!e.globals.hasOwnProperty(t)){e.globals[t]=new g.Items([],{global:t})};var s=e.globals[t],m=[];o.each(s,function(e,t){m.push(t)});if(r=='replace'){s.resetAll()};var p=[];o.each(n,function(e,t){p.push(t);s.add(o.extend({id:t},e),{merge:!0})});var l=[];if(r=='replace'){l=p}else{l=o.difference(p,m)};var c=[];o.each(l,function(e){c.push(s.get(e))});if(a){s.saveAll()};i.data={new_ids:l,new_items:c,global:t,items:s};return i},T=function(t,n,r,s){r=(r!==undefined)?r:'replace-keep-global-items';s=(s!==undefined)&&s===!0;var a={ok:!0,message:'',type:'',data:{}};if(!t.data||!t.slug){a.ok=!1;a.type='bad-format';a.message='Wrong component format';return a};if(r!=='update'&&r!=='replace'&&r!=='replace-keep-global-items'){a.ok=!1;a.type='bad-format';a.message='Wrong type : '+r;return a};var c=e.components.get(t.slug);if(c){var d=c.get('data'),l=t.data;if(l.hasOwnProperty('ids')){if(t.global){var i=t.global;if(!e.globals.hasOwnProperty(i)){var u=new g.Items([],{global:i});e.globals[i]=u};var m=[];if(r==='replace'||r==='replace-keep-global-items'){m=l.ids}else{m=o.difference(l.ids,d.ids);l.ids=o.union(d.ids,l.ids)};c.set('data',l);var p=e.globals[i];if(r==='replace'){p.resetAll()};o.each(n[i],function(e,t){p.add(o.extend({id:t},e),{merge:!0})});var f=[];o.each(m,function(e){f.push(p.get(e))});if(s){c.save();p.saveAll()};a.data={new_ids:m,new_items:f,component:c}}else{a.ok=!1;a.type='bad-format';a.message='List component must have a global'}}else{if(r=='update'){l=o.extend(d,l)}else{};c.set('data',l);if(s){c.save()};if(t.global){var i=t.global;if(!e.globals.hasOwnProperty(i)){var u=new g.Items([],{global:i});e.globals[i]=u};var p=e.globals[i];if(r=='replace'){p.resetAll()};o.each(n[i],function(e,t){p.add(o.extend({id:t},e),{merge:!0})});if(s){p.save()}};a.data={component:c}}}else{a.ok=!1;a.type='not-found';a.message='Component not found : '+t.slug};return a};e.resetGlobalItems=function(e,t){t=(t!==undefined)&&t===!0;S(e,{},'replace',t)};e.liveQuery=function(t,n,a,l){var d=!l.hasOwnProperty('auto_interpret_result')||l.auto_interpret_result===!0,g=l.hasOwnProperty('type')?l.type:'replace-keep-global-items',c=l.hasOwnProperty('persistent')&&l.persistent===!0,f=h.getWebServiceUrlToken('live-query'),u=f+'/live-query';t=s.applyFilters('web-service-params',t,['live-query']);var p={data:t};p=s.applyFilters('ajax-args',p,['live-query']);p.url=i.wp_ws_url+u;p.type='GET';p.dataType='json';p.success=function(t){if(t.result&&t.result.status==1){if(d){var l={};if(t.components){l=t.components}else if(t.component){l[t.component.slug]=t.component};if(!o.isEmpty(l)){var s='',i={};o.each(l,function(e){var n=T(e,t.globals,g,c);i[e.slug]=n;if(n.ok){r.log('Live query update component "'+e.slug+'" OK.',n)}else{r.log('Error : Live query : update_component "'+e.slug+'"',n,e);s+=(n.message+' ')}});if(s===''){if(n){n(t,i)}}else{e.triggerError('live-query:update-component-error',{type:'mixed',where:'app::liveQuery',message:s,data:{results:i}},a)}}else if(t.globals&&!o.isEmpty(t.globals)){var s='',i={};o.each(t.globals,function(e,t){var n=S(t,e,g,c);i[t]=n;if(n.ok){r.log('Live query update global "'+t+'" OK.',n)}else{r.log('Error : Live query : update_global_items "'+t+'"',n,e);s+=(n.message+' ')}});if(s===''){if(n){n(t,i)}}else{e.triggerError('live-query:update-global-items-error',{type:'mixed',where:'app::liveQuery',message:s,data:{results:i}},a)}}else{e.triggerError('live-query:no-auto-interpret-action-found',{type:'not-found',where:'app::liveQuery',message:'Live Query web service : could not auto interpret answer',data:{answer:t}},a)}}else{r.log('Live query ok (no auto interpret). Web Service answer : "',t,p);if(n){n(t)}}}else{e.triggerError('live-query:ws-return-error',{type:'web-service',where:'app::liveQuery',message:'Web service "liveQuery" returned an error : ['+t.result.message+']'},a)}};p.error=function(t,n,o){e.triggerError('live-query:ajax',{type:'ajax',where:'app::liveQuery',message:n+': '+o,data:{url:i.wp_ws_url+u,jqXHR:t,textStatus:n,errorThrown:o}},a)};$.ajax(p)};e.getPageComponentByPageId=function(e,t){var n=o.find(this.getComponents(),function(t){return t.type==='page'&&t.global==='pages'&&t.data.root_id===e});if(!n&&t===!0){n=this.findFirstComponentOfType('page')};return n};e.getComponentData=function(t){var i=null,a=e.components.get(t);if(a){var m=a.get('type');switch(m){case'posts-list':var n=a.get('data');var p=new g.ItemsSlice(),l=e.globals[a.get('global')];o.each(n.ids,function(e,t){p.add(l.get(e))});i={type:m,view_data:{posts:p,title:a.get('label'),total:n.total},data:n};break;case'page':var n=a.get('data');var d=a.get('global'),l=e.globals[d];if(l){var u=l.get(n.root_id);if(u){i={type:m,view_data:{},data:n}}};break;case'hooks':if(a.get('data')){var n=a.get('data');if(a.get('global')){var l=e.globals[a.get('global')];if(l){if(n.hasOwnProperty('ids')){var p=new g.ItemsSlice();o.each(n.ids,function(e,t){p.add(l.get(e))});var c={items:p.toJSON(),title:a.get('label')};if(n.hasOwnProperty('total')){c=o.extend(c,{total:n.total})};i={type:'hooks-list',view_data:c,data:n}}else{i={type:'hooks-no-global',view_data:n,data:n}}}else{i={type:'hooks-no-global',view_data:n,data:n}}}else{r.log('app.js warning : custom component has a global but no ids : the global will be ignored.');i={type:'hooks-no-global',view_data:n,data:n}}}else{e.triggerError('getcomponentdata:hooks:no-data',{type:'wrong-data',where:'app::getComponentData',message:'Custom component ['+t+'] has no data attribute: please check that the component\'s hook is set correctly.',data:{component:a}})};break;default:i={type:'',view_data:{},data:{}};i=s.applyFilters('component-data',i,[a]);if(i.type==''){i=null};break}};if(i!=null){i=o.extend({id:a.get('id'),label:a.get('label'),global:a.get('global')},i)};return i};e.getGlobalItems=function(t,n,r){var a=[];r=r===undefined?!1:(r===!0);if(o.has(e.globals,t)){var s=e.globals[t];if(n!==undefined&&n.length){o.each(n,function(e,t){var n=s.get(e);if(n){a.push(r?n:n.toJSON())}})}else{s.each(function(e,t){a.push(r?e:e.toJSON())})}};return a};e.getGlobalItemsSlice=function(t,n){var r=new g.ItemsSlice();if(o.has(e.globals,t)){var a=e.globals[t];if(n!==undefined&&n.length){o.each(n,function(e){r.add(a.get(e))})}else{a.each(function(e,t){r.add(e)})}};return r};e.getGlobalItem=function(t,n){var a=null;if(o.has(e.globals,t)){var s=e.globals[t],r=s.get(n);if(r){a=r.toJSON()}};return a};e.getItemsFromRemote=function(t,n){n=n||{};r.log('Retrieving items from remote server.',t);var a=null;if(n.component_id){if(this.components.get(n.component_id)){a=this.components.get(n.component_id)}else{this.triggerError('get-items:remote:wrong-component-given',{type:'wrong-data',where:'app::getItemsFromRemote',message:'Provided component not found ['+n.component_id+']',data:{options:n,items_ids:t}},n.error);return}};if(!a){var l=n.component_type?n.component_type:'posts-list';a=this.findFirstComponentOfType(l)};if(a){var s=this,i=!n.persistent||n.persistent===!0;this.liveQuery({wpak_component_slug:a.id,wpak_query_action:'get-items',wpak_items_ids:t},function(e,i){var l=o.find(i,function(e){return e.data.new_items.length>0});if(l){r.log('Items retrieved successfully from remote server.',t,i);if(n.success){n.success(e,a,i)}}else{if(n.error){s.triggerError('get-items:remote:no-item-found',{type:'not-found',where:'app::getItemsFromRemote',message:'Requested items not found',data:{options:n,items_ids:t}},n.error)}}},function(e){if(n.error){n.error(e)}},{type:'update',persistent:i})}else{e.triggerError('get-items:remote:wrong-component',{type:'wrong-data',where:'app::getItemsFromRemote',message:'Could not find a valid component',data:{options:n,items_ids:t}},n.error)}};e.findFirstComponentOfType=function(e){return o.findWhere(this.getComponents(),{type:e})};e.loadRouteItemFromRemote=function(e,t,n,o){var g=s.applyFilters('load-unfound-items-from-remote',!0,[e,t]);if(g){var a=s.applyFilters('load-unfound-items-component-id','',[e,t]),i=s.applyFilters('load-unfound-items-component-type',n,[e,t]);this.triggerInfo('load-item-from-remote:start',{item_id:e,item_global:t,item_component_id:a,item_component_type:i});var p=this.globals[t],l=this;this.getItemsFromRemote([e],{component_id:a,component_type:i,success:function(n,s,g){var c=p.get(e);l.triggerInfo('load-item-from-remote:stop',{item_id:e,item_global:t,item:c,item_component_id:a,item_component_type:i,success:!!c});if(c){if(o.success){o.success(c,s)}}else{r.log('loadRouteItemFromRemote : unexpected error "'+e+'" not found in global "'+t+'" even after remote call.');l.triggerError('get-items:remote:item-not-found-in-global',{type:'not-found',where:'app::loadRouteItemFromRemote',message:'Requested items not found',data:{item_id:e,item_global:t,item:c,item_component_id:a,item_component_type:i}});if(o.error){o.error()}}},error:function(){l.triggerInfo('load-item-from-remote:stop',{item_id:e,item_global:t,item_component_id:a,item_component_type:i,success:!1});if(o.error){o.error()}}})}else{if(o.error){o.error()}}};var R=function(t){e.options.fetch({'success':function(n,o,a){r.log('Options retrieved from local storage.',{options:n});e.saveOptions(t)},'error':function(n,o,r){e.saveOptions(t)}})};e.saveOptions=function(t){o.each(i.options,function(t,n,o){if(undefined===e.options.get(n)){r.log('Option not existing: adding to collection',{key:n,value:t});e.options.add({id:n,value:t})}});e.options.saveAll();if(undefined!==t){t()}};e.initialize=function(n){if(i.app_platform==='pwa'&&i.app_type!=='preview'){e.setParam('use-html5-pushstate',!0);r.log('HTML5 pushstate mode activated.')};document.addEventListener('resume',e.onResume,!1);R(function(){E.initialize(function(){I.initialize(function(){if(i.debug_mode=='on'){require(['core/views/debug','jquery.velocity'],function(e){var t=new e();t.render()})};if(undefined!==n){n()}})})})};e.onResume=function(){var t=w.getLaunchRoute();t=s.applyFilters('resume-route',t,[u.getStats()]);if(t.length){e.router.navigate(t,{trigger:!0})}};e.onOnline=function(){p.trigger('network:online');r.log('Network event : online')};e.onOffline=function(){p.trigger('network:offline');r.log('Network event : offline')};return e});
+define(function (require,exports) {
+
+      "use strict";
+
+      var $                   = require('jquery'),
+      	  _                   = require('underscore'),
+          Backbone            = require('backbone'),
+          Components          = require('core/models/components'),
+          Globals             = require('core/models/globals'),
+          Navigation          = require('core/models/navigation'),
+          Options             = require('core/models/options'),
+          Items               = require('core/models/items'),
+          Comments            = require('core/models/comments'),
+          CustomPage          = require('core/models/custom-page'),
+          Config              = require('root/config'),
+          Utils               = require('core/app-utils'),
+          Hooks               = require('core/lib/hooks'),
+		  Stats               = require('core/stats'),
+          DynamicData         = require('core/app-dynamic-data'),
+		  Addons              = require('core/addons-internal'),
+		  WsToken             = require('core/lib/encryption/token'),
+          DeepLink			  = require( 'core/modules/deep-link' );
+
+	  var app = {};
+
+	  //--------------------------------------------------------------------------
+	  //Event aggregator
+	  var vent = _.extend({}, Backbone.Events);
+	  app.on = function(event,callback){
+		  vent.on(event,callback);
+	  };
+
+	//--------------------------------------------------------------------------
+	//Public event handling : errors and infos
+
+	app.triggerError = function( error_id, error_data, error_callback ) {
+		vent.trigger( 'error:' + error_id, error_data );
+		Utils.log( 'App error event [' + error_id + ']' + (error_data.hasOwnProperty('message') ? ' ' + error_data.message : ''), error_data );
+		if ( error_callback != undefined ) {
+			error_data = _.extend( { event: 'error:' + error_id, id: error_id }, error_data );
+			error_callback( error_data );
+		}
+	};
+
+	/**
+	 * Triggers an info event. Use this to trigger your own App events from modules and addons.
+	 *
+	 * @param {String} info event name
+	 * @param {JSON Object} data Data that is passed to event callback
+	 */
+	app.triggerInfo = function( info, info_data, info_callback ) {
+
+		switch ( info ) {
+
+			case 'no-content':
+				vent.trigger( 'info:no-content' );
+				break;
+
+			case 'app-launched':
+				var stats = Stats.getStats();
+				vent.trigger( 'info:app-ready', { stats: stats } );
+				if ( stats.count_open == 1 ) {
+					vent.trigger( 'info:app-first-launch', { stats: stats } );
+				}
+				if ( stats.version_diff.diff != 0 ) {
+					vent.trigger( 'info:app-version-changed', { stats: stats } );
+				}
+				break;
+
+			default:
+				vent.trigger( 'info:' + info, info_data );
+				if ( info_callback != undefined ) {
+					info_data = _.extend( { event: 'info:' + info, id: info }, info_data );
+					info_callback( info_data );
+				}
+				break;
+
+		}
+
+
+	};
+
+	  //--------------------------------------------------------------------------
+	  //Custom pages and routes handling
+
+	  var current_custom_page = null;
+	  var custom_routes = {};
+
+	  app.getCurrentCustomPage = function(){
+		  return current_custom_page;
+	  };
+
+	  /**
+	   * Displays a custom page using the given template.
+	   * @param data see models/custom-page.js for data fields
+	   */
+	  app.showCustomPage = function(template,data,fragment,silent){
+		  var args = {template: template, data: data};
+		  if( fragment !== undefined ){
+			  args.id = fragment;
+		  }
+		  current_custom_page = new CustomPage(args);
+		  if ( silent === true ) {
+			  app.router.execute_route_silently( app.getScreenFragment( 'custom-page' ) );
+			  app.router.navigate( fragment, { trigger: false } );
+		  } else {
+			  app.router.navigate( app.getScreenFragment( 'custom-page' ), { trigger: true } );
+		  }
+	  };
+
+	  app.addCustomRoute = function( fragment, template, data ) {
+		  fragment = Utils.removeTrailingSlash( fragment );
+		  custom_routes[fragment] = { template: template, data: data };
+	  };
+
+	  app.removeCustomRoute = function( fragment ) {
+		  fragment = Utils.removeTrailingSlash( fragment );
+		  if( custom_routes.hasOwnProperty(fragment) ) {
+			  delete custom_routes[fragment];
+		  }
+	  };
+
+	  app.getCustomRoute = function( fragment ) {
+		  var route = {};
+		  fragment = Utils.removeTrailingSlash( fragment );
+		  if( custom_routes.hasOwnProperty(fragment) ) {
+			  route = custom_routes[fragment];
+		  }
+		  return route;
+	  };
+
+	  //--------------------------------------------------------------------------
+	  //App params :
+	  //Params that can be changed by themes dynamically : themes can freely change
+	  //their value during a same app execution.
+	  //TODO : we should link (but not merge because they don't have the same usage)
+	  //those params to App options...
+	  // Beware when merging these because options are stored permanently while params are runtime-dependant (refreshed at each app launch)
+	  // Deep Link module especially is updating a param
+
+	  var params = {
+		  'refresh-at-app-launch' : true,
+		  'go-to-default-route-after-refresh' : true,
+		  'custom-screen-rendering' : false,
+          'use-html5-pushstate': false //Automatically set to true only for PWA
+	  };
+
+	  app.getParam = function(param){
+		  var value = null;
+		  if( params.hasOwnProperty(param) ){
+    		  value = params[param];
+    	  }
+    	  return value;
+	  };
+
+	  app.setParam = function(param,value){
+		  if( params.hasOwnProperty(param) ){
+			  params[param] = value;
+		  }
+	  };
+
+	  //--------------------------------------------------------------------------
+	  //App Backbone router :
+	  app.router = null; //Set in launch.js for now, to avoid circular dependency
+
+      /**
+       * Add a screen to history manually from its route, without triggering 
+       * the route, nor the corresponding screen rendering. 
+       */
+      app.silentlyAddRouteToAppHistory = function( route ) {
+        var route_info = app.router.getRouteTypeAndParameters( route );
+        if ( route_info ) {
+            var route_rendering_data = app.router.getRouteData( route_info.type, route_info.parameters );
+            app.setQueriedScreen( route_rendering_data.screen_data );
+            app.addQueriedScreenToHistory();
+            Utils.log( 'Silently added route to history: '+ route );
+        }
+      };
+      
+	  /**
+	   * Sets the route corresponding to the app homepage : fragment empty or = "#".
+	   * Use the 'default-route' filter to change the default route from functions.js.
+	   *
+	   * app.router must be set before calling this resetDefaultRoute
+	   */
+	  app.resetDefaultRoute = function(is_app_launch){
+
+		var default_route = '';
+
+		var is_app_launch = is_app_launch !== undefined && is_app_launch === true;
+		if( app.navigation.length > 0 ){
+			var first_nav_component_id = app.navigation.first().get('component_id');
+			default_route = app.getScreenFragment( 'component', { component_id: first_nav_component_id } );
+		}else{
+			//No navigation item : set default route to first component found:
+			if( app.components.length ){
+				var first_component = app.components.first();
+				default_route = app.getScreenFragment( 'component', { component_id: first_component.id } );
+			}else{
+				Utils.log('No menu item, no component found. Could not set default route.');
+			}
+		}
+
+		/**
+		 * Hook : filter 'default-route' : use this to define your own default route
+		 */
+		default_route = Hooks.applyFilters('default-route',default_route,[Stats.getStats(),is_app_launch]);
+
+		if( default_route != '' ){
+			app.router.setDefaultRoute(default_route);
+		}
+
+		return default_route;
+	  };
+
+      /**
+       * Flag to know if the app is currently launching.
+       * (is_launching state is set and updated in launch.js).
+       */
+      var is_launching = false;
+
+      app.setIsLaunching = function( launching ) {
+        is_launching = launching;
+      };
+
+      app.isLaunching = function() {
+        return is_launching;
+      };
+
+      /**
+       * Initialize and start app router, taking deeplink and url fragment/pathname into account.
+       */
+	  app.launchRouting = function() {
+
+		var default_route = app.resetDefaultRoute(true);
+		var launch_route = default_route;
+		var deep_link_route = DeepLink.getLaunchRoute();
+        var url_fragment = window.location.hash; //Retrieve asked route from url's fragment
+        var url_pathname = window.location.pathname; //Retrieve asked route from url's relative path
+        
+		/**
+         * Set default route to the one passed via deeplink or via url fragment or via url slug.
+         * + Disable refresh at app launch because:
+         * 1. it will cause going to default route right after, so our launch route won't be useful
+         * 2. if we're here, it's because we're in launching process, after having retrieved some data
+         * 3. if we disable 'go-to-default-route-after-refresh', we'd have to enable it again after the next refresh
+         */
+        var asked_route = '';
+        var is_deeplink = false;
+		if( deep_link_route.length > 0 ) {
+            
+            is_deeplink = true;
+
+            asked_route = deep_link_route;
+
+            app.setParam( 'refresh-at-app-launch', false );
+
+		} else if ( url_fragment.length > 0 ) {
+            
+            asked_route = url_fragment;
+            
+            app.setParam( 'refresh-at-app-launch', false );
+        
+        } else if ( app.getParam( 'use-html5-pushstate' ) && url_pathname.length > 0 && url_pathname.indexOf( Config.app_path ) === 0 ) {
+            
+            asked_route = url_pathname.replace( Config.app_path, '' );
+            
+            if ( asked_route.length > 0 ) {
+                asked_route = Utils.addTrailingSlash( asked_route );
+                if ( asked_route !== default_route ) {
+                    app.setParam( 'refresh-at-app-launch', false );
+                }
+            }
+        }
+        
+        //A route was asked by url, that is different from launch route.
+        //Set launch_route to this asked route and manually add the default screen
+        //to history, so that we can go back to it with back button.
+        if ( asked_route.length > 0 && asked_route !== launch_route ) {
+           
+            var add_default_route_before_asked_route = Hooks.applyFilters( 'add-default-route-before-asked-route', true, [ asked_route, default_route, launch_route ] );
+           
+            if ( add_default_route_before_asked_route ) {
+                app.silentlyAddRouteToAppHistory( default_route );
+            }
+            
+            launch_route = asked_route;
+        }
+
+		/**
+		 * Use the 'launch-route' filter to display a specific screen at app launch
+		 * If the returned launch_route = '' the initial
+		 * navigation to launch route is canceled. Then you should navigate manually
+		 * to a choosen page in the "info:app-ready" event for example.
+		 */
+		launch_route = Hooks.applyFilters('launch-route',launch_route,[Stats.getStats()]);
+        
+		/**
+		 * 'pre-start-router' action: use this if you need to do some treatment
+		 * before Backbone routing starts.
+		 */
+		Hooks.doActions( 'pre-start-router', [ launch_route, Stats.getStats() ] ).done( function() {
+            
+			// Reset DeepLink launch route after hooks are fired to let scripts retrieve this route if needed
+			DeepLink.reset();
+
+            var history_start_args = {};
+            
+            if( app.getParam( 'use-html5-pushstate' ) ) {
+                history_start_args.pushState = true;
+                history_start_args.root = Config.app_path;
+            }
+
+            if ( is_deeplink ) {
+                //We don't want to trigger '/' route when router starts and we have a deeplink to open: 
+                //it leads to 2 routes triggered very closely causing history/view rendering issue.
+                history_start_args.silent = true;
+            }
+
+			if( launch_route.length > 0 && default_route.length > 0 ){
+
+                //Start router
+                //(history.start triggers the current url fragment or pathname if any)
+				Backbone.history.start( history_start_args );
+
+				//Navigate to the launch_route :
+				if ( launch_route === default_route ) {
+					app.router.default_route();
+				} else if ( is_deeplink ) {
+                    //Deeplinks start silently, we need to manually navigate to launch_route:
+					app.router.navigate(launch_route, {trigger: true});
+				}
+
+			}else{
+                history_start_args.silent = true;
+				Backbone.history.start( history_start_args );
+				//Hack : Trigger a non existent route so that no view is loaded :
+				app.router.navigate('#wpak-none', {trigger: true});
+			}
+
+		} );
+
+		/*
+		    //Keep this commented for now in case the problem comes back.
+		    //Normally it was solved by the "Router callback checking" hack in routers.js.
+
+			//Start "silently" so that we don't navigate to a url already set in browser
+			//(that causes some odd crashes opening views that don't correpond to current screen,
+			//when triggering 2 routes in a very short delay) :
+
+			Backbone.history.start({silent: true});
+
+			if( launch_route.length > 0 ){
+				//Navigate to the launch_route :
+				app.router.navigate(launch_route, {trigger: true});
+			}else{
+				//Hack : Trigger a non existent route so that no view is loaded :
+				app.router.navigate('#wpak-none', {trigger: true});
+			}
+
+			//If the launch_route is the same as the current browser url, it won't fire.
+			//So we have to restart the router, removing the silent option to really
+			//navigate to the launch_route (at last!).
+			Backbone.history.stop();
+			Backbone.history.start({silent: false});
+		*/
+	  };
+	  
+	/**
+	 * Builds screen link according to given link type.
+	 * @param link_type    int          Can be 'single', 'page', 'comments', 'component' or 'custom-page'
+	 * @param data         JSON Object  Depends on link_type:
+	 * - for single: {global, item_id}
+	 * - for page: {component_id, item_id}
+	 * - for comments: {item_id}
+	 * - for component: {component_id}
+	 * - for custom-page: none
+	 */
+	app.getScreenFragment = function ( link_type, data ) {
+		
+		var screen_link = '';
+        
+        var prefix = app.getParam('use-html5-pushstate') ? '' : '#';
+        var suffix = app.getParam('use-html5-pushstate') ? '/' : '';
+		
+		switch( link_type ) {
+			case 'single':
+				screen_link = prefix + 'single/' + data.global + '/' + data.item_id + suffix;
+				break;
+			case 'page':
+				screen_link = prefix + 'page/' + data.component_id + '/' + data.item_id + suffix;
+				break;
+			case 'comments':
+				screen_link = prefix + 'comments-' + data.item_id + suffix;
+				break;
+			case 'component':
+				var component = app.getComponentData( data.component_id );
+				if ( component ) {
+					//If page component, return directly page's screen fragment to avoid
+					//redirection in router, which leads to back button not working.
+					screen_link = component.type !== 'page' ? prefix + 'component-'+ component.id + suffix : prefix + 'page/'+ component.id +'/'+ component.data.root_id + suffix;
+				}
+				break;
+			case 'custom-page':
+				screen_link = prefix + 'custom-page' + suffix;
+				break;
+		}
+		
+		return screen_link;
+	};
+
+	  //--------------------------------------------------------------------------
+	  //History : allows to handle back button.
+
+	  var history_stack = [];
+	  var queried_screen_data = {};
+	  var previous_screen_memory = {};
+	  var last_history_action = '';
+
+	  var history_push = function(screen_data){
+		  history_stack.push(screen_data);
+	  };
+
+	  var formatScreenData = function(screen_data){
+		  return {
+			  screen_type:screen_data.screen_type,
+			  component_id:screen_data.component_id,
+			  item_id:screen_data.item_id,
+			  fragment:screen_data.fragment,
+			  data:screen_data.hasOwnProperty('data') ? screen_data.data : {},
+			  global:screen_data.hasOwnProperty('global') ? screen_data.global : '',
+			  label:screen_data.hasOwnProperty('label') ? screen_data.label : ''
+		  };
+	  };
+
+	  /**
+	   * Called in region-manager.js to set the queried screen according to the current route.
+	   * This queried screen is then pushed to history in app.addQueriedScreenToHistory().
+	   */
+	  app.setQueriedScreen = function( screen_data ){
+		  
+		  screen_data = _.extend( screen_data, {
+		  	fragment: Backbone.history.fragment
+	  	  });
+		  
+		  /**
+		   * 'queried-screen' filter
+		   * Allows to customize queried screen data before inserting it into history.
+		   * Useful for example to customize screen label.
+		   */
+		  screen_data = Hooks.applyFilters( 'queried-screen', screen_data, [] );
+		  
+		  queried_screen_data = formatScreenData( screen_data );
+	  };
+
+	  app.getQueriedScreen = function(){
+		  return queried_screen_data;
+	  };
+
+	  /**
+	   * Pushes the queried screen to the history stack according to the screen type and where we're from.
+	   */
+	  app.addQueriedScreenToHistory = function(force_flush){
+
+		  var force_flush_history = force_flush != undefined && force_flush == true;
+
+		  var current_screen = app.getCurrentScreenData();
+		  var previous_screen = app.getPreviousScreenData();
+		  
+		  //If we "pop" history current_screen is going to be removed from history_stack:
+		  //memorize it so that we can know where we came from (for screen transitions for example):
+		  previous_screen_memory = current_screen;
+
+		  if( current_screen.screen_type != queried_screen_data.screen_type || current_screen.component_id != queried_screen_data.component_id
+			  || current_screen.item_id != queried_screen_data.item_id || current_screen.fragment != queried_screen_data.current_fragment ){
+
+			  if( force_flush_history ){
+				  history_stack = [];
+			  }
+
+			  var history_action = '';
+
+			  if( queried_screen_data.fragment == current_screen.fragment ) { 
+				  //Redisplaying same screen: do nothing
+				  history_action = 'none';
+			  }else if( queried_screen_data.screen_type == 'list' ){
+				  history_action = 'empty-then-push';
+			  }else if( queried_screen_data.screen_type == 'single' ){
+				  history_action = 'push';
+				  if( current_screen.screen_type == 'comments' ){
+					  if( previous_screen.screen_type == 'single' && previous_screen.item_id == queried_screen_data.item_id ){
+						  history_action = 'pop';
+					  }else{
+						  history_action = 'empty-then-push';
+					  }
+				  }
+			  }else if( queried_screen_data.screen_type == 'page' ){
+				  if( current_screen.screen_type == 'page'
+					  && current_screen.component_id == queried_screen_data.component_id
+					  && !queried_screen_data.data.is_tree_root
+					  ){
+					  if( previous_screen.screen_type == 'page'
+						  && previous_screen.component_id == queried_screen_data.component_id
+						  && previous_screen.item_id == queried_screen_data.item_id
+						  ){
+						  history_action = 'pop';
+					  }else{
+						  history_action = 'push';
+					  }
+				  }else if( current_screen.screen_type == 'comments' ){
+					  if( previous_screen.screen_type == 'page' && previous_screen.item_id == queried_screen_data.item_id ){
+						  history_action = 'pop';
+					  }else{
+						  history_action = 'empty-then-push';
+					  }
+				  }else{
+					  history_action = 'empty-then-push';
+				  }
+			  }else if( queried_screen_data.screen_type == 'comments' ){
+				  if( ( current_screen.screen_type == 'single' || current_screen.screen_type == 'page' ) && current_screen.item_id == queried_screen_data.item_id ){
+					  history_action = 'push';
+				  } else {
+					  //Trying to reach a comment screen directly without displaying its parent post or page.
+					  //Try to add the parent post or page manually, if it exists in the app:
+					  var parent_item_global = 'posts';
+					  var parent_item = app.getGlobalItem( 'posts', queried_screen_data.item_id );
+					  if ( !parent_item ) {
+						  parent_item = app.getGlobalItem( 'pages', queried_screen_data.item_id );
+						  if ( parent_item ) {
+							  parent_item_global = 'pages';
+						  }
+					  }
+					  
+					  if ( parent_item ) {
+						  
+						//Note: this is quite hacky as this is normally done from router and 
+						//we don't have all data about the parent screen here (especially for the page case)...
+						var parent_item_data = {
+							screen_type: parent_item_global === 'posts' ? 'single' : 'page',component_id:'',item_id:queried_screen_data.item_id,
+							global:parent_item_global,data:{post:parent_item},label:parent_item.title,
+							fragment: parent_item_global === 'posts' ? app.getScreenFragment( 'single', { global: 'posts', item_id: queried_screen_data.item_id } ) : '' 
+							//we can't know page's fragment as we don't know page's component...
+						};
+						
+						//Push comments' parent screen to history:
+						history_push( formatScreenData( parent_item_data ) );
+						
+						//Then push the comments screen itself:
+						history_action = 'push';
+					  }
+				  }
+			  }else if( queried_screen_data.screen_type == 'custom-page' ){
+				  history_action = 'empty-then-push';
+			  }else if( queried_screen_data.screen_type == 'custom-component' ){
+				  history_action = 'empty-then-push';
+			  }else{
+				  history_action = 'empty';
+			  }
+			}
+
+			history_action = Hooks.applyFilters( 'make-history', history_action, [ history_stack, queried_screen_data, current_screen, previous_screen ] );
+
+			last_history_action = history_action;
+
+			switch ( history_action ) {
+				case 'empty-then-push':
+					history_stack = [];
+					history_push( queried_screen_data );
+					break;
+				case 'empty':
+					history_stack = [];
+					break;
+				case 'push':
+					history_push( queried_screen_data );
+					break;
+				case 'pop':
+					history_stack.pop();
+					break;
+			}
+
+	  };
+	  
+	  /**
+	   * Returns app's current history stack
+	   * @returns {Array} App's history stack (array of screen objects)
+	   */
+	  app.getHistory = function() {
+		  //Clone the history_stack array so that it can't be modified from outside:
+		  return history_stack.slice(0); 
+	  };
+	  
+	  /**
+	   * Returns last action applied to history stack
+	   * @returns {String} history action: push, pop, empty or empty-then-push
+	   */
+	  app.getLastHistoryAction = function() {
+		  return last_history_action;
+	  };
+
+	  /**
+	   * Returns infos about the currently displayed screen.
+	   * @returns {screen_type:string, component_id:string, item_id:integer, fragment:string}
+	   * Core screen_types are "list", "single", "page" "comments".
+	   */
+	  app.getCurrentScreenData = function(){
+		  var current_screen = {};
+		  if( history_stack.length ){
+			  current_screen = history_stack[history_stack.length-1];
+		  }
+		  return current_screen;
+	  };
+
+	  /**
+	   * Returns infos about the screen displayed previously.
+	   * @returns {screen_type:string, component_id:string, item_id:integer, fragment:string} or {} if no previous screen
+	   */
+	  app.getPreviousScreenData = function(){
+		  var previous_screen = {};
+		  if( history_stack.length > 1 ){
+			  previous_screen = history_stack[history_stack.length-2];
+		  }
+		  return previous_screen;
+	  };
+
+	  app.getPreviousScreenMemoryData = function(){
+		  return previous_screen_memory;
+	  };
+
+	  app.getPreviousScreenLink = function(){
+		  var previous_screen_link = '';
+		  var previous_screen = app.getPreviousScreenData();
+		  if( !_.isEmpty(previous_screen) ){
+			  previous_screen_link = '#'+ previous_screen.fragment;
+		  }
+		  return previous_screen_link;
+	  };
+
+	  app.getCurrentScreenGlobal = function( global ) {
+        var screen_data = app.getCurrentScreenData();
+
+        var current_screen_global = '';
+        if (global != undefined) {
+            current_screen_global = global;
+        } else {
+            if (screen_data.screen_type == 'comments') {
+                var previous_screen_data = app.getPreviousScreenData();
+                if (previous_screen_data.screen_type == 'single') {
+                    current_screen_global = previous_screen_data.global;
+                }
+            } else {
+                if (screen_data.hasOwnProperty('global') && screen_data.global != '') {
+                    current_screen_global = screen_data.global;
+                }
+            }
+        }
+
+		current_screen_global = Hooks.applyFilters( 'current-screen-global', current_screen_global, [screen_data, global] );
+
+        return current_screen_global;
+	  };
+
+	  //--------------------------------------------------------------------------
+	  //App items data :
+	  app.components = new Components;
+	  app.navigation = new Navigation;
+	  app.options    = new Options;
+	  app.comments   = new Comments.CommentsMemory;
+
+	  //For globals, separate keys from values because localstorage on
+	  //collections of collections won't work :-(
+	  var globals_keys = new Globals;
+	  app.globals = {};
+
+	app.addGlobalType = function( type ) {
+		if( undefined === globals_keys.get( type ) ) {
+			Utils.log( 'app.addGlobalType info: adding a type to globals', { type: type } );
+			globals_keys.add( { id: type } );
+            app.globals[type] = new Items.Items( [], { global: type } );
+		}
+	};
+
+	app.addGlobalItem = function( type, item ) {
+		if( undefined === item.id ) {
+			Utils.log( 'app.addGlobalItem error: undefined item.id', { item: item } );
+			return;
+		}
+
+		if( undefined === globals_keys.get( type ) ) {
+			Utils.log( 'app.addGlobalItem info: ' + type + ' not known, adding it', { type: type, item: item } );
+			app.addGlobalType( type );
+		}
+
+		if( null === app.getGlobalItem( type, item.id ) ) {
+			Utils.log( 'app.addGlobalItem info: adding an item to globals', { type: type, item: item } );
+            app.globals[type].add( item );
+        }
+	};
+
+	app.componentExists = function( component_id ) {
+		return app.components.get( component_id ) !== undefined;
+	};
+
+	app.getComponents = function( filter ) {
+		var components = [];
+
+		if ( _.isObject( filter ) ) {
+			if ( filter.type ) {
+				components = app.components.where( { type: filter.type } );
+			}
+		} else {
+			components = app.components.toJSON();
+		}
+
+		return components;
+	};
+
+	app.getNavigationComponents = function( filter ) {
+		var navigation_components = [];
+
+		app.navigation.each( function( element ) {
+			var component = app.components.get( element.get( 'component_id' ) );
+			if ( component ) {
+				if ( filter.type ) {
+					if ( component.get( 'type' ) == filter.type ) {
+						navigation_components.push( component );
+					}
+				} else {
+					navigation_components.push( component );
+				}
+			}
+		} );
+
+		return navigation_components;
+	};
+
+	  //--------------------------------------------------------------------------
+	  //App synchronization :
+
+	  app.sync = function( cb_ok, cb_error, force_reload ){
+
+		  var force = force_reload != undefined && force_reload;
+          
+		  app.components.fetch({'success': function(components, response, options){
+			  Hooks.doActions( 'components-fetched', [components, response, options] ).done( function() {
+	    		 if( components.length == 0 || force ){
+	    			 syncWebService( cb_ok, cb_error );
+	    		 }else{
+	    			 Utils.log('Components retrieved from local storage.',{components:components});
+	    			 app.navigation.fetch({'success': function(navigation, response_nav, options_nav){
+	    	    		 if( navigation.length == 0 ){
+	    	    			 syncWebService( cb_ok, cb_error );
+	    	    		 }else{
+	    	    			 Utils.log('Menu items retrieved from local storage.',{navigation:navigation});
+	    	    			 globals_keys.fetch({'success': function(global_keys, response_global_keys, options_global_keys){
+	    	    	    		 if( global_keys.length == 0 ){
+	    	    	    			 syncWebService( cb_ok, cb_error );
+	    	    	    		 }else{
+	    	    	    			 var fetch = function(_items,_key){
+	    	    	    				 return _items.fetch({'success': function(fetched_items, response_items, options_items){
+    	    	    	    				app.globals[_key] = fetched_items;
+    	    	    	    				//Backbone's fetch returns jQuery ajax deferred object > works with $.when
+    	    	    					 }});
+	    	    	    			 };
+
+	    	    	    			 var fetches = [];
+	    	    	    			 global_keys.each(function(value, key, list){
+	    	    	    				 var global_id = value.get('id');
+	    	    	    				 var items = new Items.Items( [], {global:global_id} );
+	    	    	    				 fetches.push(fetch(items,global_id));
+	    	    	    			 });
+
+	    	    	    			 $.when.apply($, fetches).done(function () {
+	    	    	    				 if( app.globals.length == 0 ){
+		    	    	    				 syncWebService( cb_ok, cb_error );
+		    	    	    			 }else{
+		    	    	    				 Utils.log('Global items retrieved from local storage.',{globals:app.globals});
+		    	    	    				 cb_ok();
+		    	    	    			 }
+	    	    	    		     });
+
+	    	    	    		 }
+	    	    			 }});
+	    	    		 }
+	    			 }});
+	    		 }
+	      	  });
+		  }});
+
+      };
+
+      /**
+       * Calls synchronization webservice.
+       * Note: cb_ok and cb_error callbacks are given a deferred that they must
+       * resolve so that the refresh:end event is triggered.
+       */
+	  var syncWebService = function( cb_ok, cb_error ){
+			
+            //If we're asking a sync with server at app launch (meaning there's no or wrong data in the app
+            //at launch), we don't need to re-trigger app refresh after launch.
+            if ( app.isLaunching() ) {
+                app.setParam( 'refresh-at-app-launch', false );
+            }
+
+            //Set refresh events:
+            
+            //Trigger 'refresh:start' event.
+            //For legacy, this is not an "info" event for now.
+            vent.trigger( 'refresh:start' );
+
+            var sync_deferred = $.Deferred();
+
+            var sync_cb_ok = function() {
+                cb_ok( sync_deferred );
+            };
+
+            var sync_cb_error = function( error_data ) {
+                cb_error( error_data, sync_deferred );
+            };
+
+            //Trigger 'refresh:end' when sync ends
+            sync_deferred.always( function( data ){
+                vent.trigger( 'refresh:end', data );
+            } );
+          
+            //Setup synchronization webservice call:
+            var token = WsToken.getWebServiceUrlToken( 'synchronization' );
+			var ws_url = token + '/synchronization/';
+
+			/**
+			* Filter 'web-service-params' : use this to send custom key/value formated
+			* data along with the web service. Those params are passed to the server
+			* (via $_GET) when calling the web service.
+			*
+			* Filtered data : web_service_params : JSON object where you can add your custom web service params
+			* Filter arguments :
+			* - web_service_name : string : name of the current web service ('synchronization' here).
+			*/
+			var web_service_params = Hooks.applyFilters('web-service-params',{},['synchronization']);
+
+			//Build the ajax query :
+			var ajax_args = {
+				timeout: 40000,
+				data: web_service_params
+			};
+
+			/**
+			 * Filter 'ajax-args' : allows to customize the web service jQuery ajax call.
+			 * Any jQuery.ajax() arg can be passed here except for : 'url', 'type', 'dataType',
+			 * 'success' and 'error' that are reserved by app core.
+			 *
+			 * Filtered data : ajax_args : JSON object containing jQuery.ajax() arguments.
+			 * Filter arguments :
+			 * - web_service_name : string : name of the current web service ('synchronization' here).
+			 */
+			ajax_args = Hooks.applyFilters( 'ajax-args', ajax_args, ['synchronization'] );
+
+			ajax_args.url = Config.wp_ws_url + ws_url;
+
+			ajax_args.type = 'GET';
+
+			ajax_args.dataType = 'json';
+
+			ajax_args.success = function( data ) {
+				if ( data.hasOwnProperty( 'result' ) && data.result.hasOwnProperty( 'status' ) ) {
+					if ( data.result.status == 1 ) {
+						if ( data.hasOwnProperty( 'components' )
+								&& data.hasOwnProperty( 'navigation' )
+								&& data.hasOwnProperty( 'globals' )
+                                && data.hasOwnProperty( 'dynamic_data' )
+								) {
+
+							app.components.resetAll();
+							_.each( data.components, function( value, key, list ) {
+								app.components.add( { id: key, label: value.label, type: value.type, data: value.data, global: value.global } );
+							} );
+							app.components.saveAll();
+
+							app.navigation.resetAll();
+							_.each( data.navigation, function( options, key, list ) {
+								app.navigation.add( { id: key, component_id: key, options: options } );
+							} );
+							app.navigation.saveAll();
+
+							//Delete all existing items from local storage :
+							globals_keys.each(function(value, key, list){
+								var global_id = value.get('id');
+								var items = new Items.Items( [], {global:global_id} );
+								items.resetAll();
+							});
+
+							app.globals = {};
+
+							//Then reload new items from web service :
+							globals_keys.resetAll();
+							_.each( data.globals, function( global, key, list ) {
+								var items = new Items.Items( [], { global: key } );
+								items.resetAll();
+								_.each( global, function( item, id ) {
+									items.add( _.extend( { id: id }, item ) );
+								} );
+								items.saveAll();
+								app.globals[key] = items;
+								globals_keys.add( { id: key } );
+							} );
+							globals_keys.saveAll();
+
+							//Empty comments memory
+							app.comments.reset();
+
+							Stats.incrementContentLastUpdate();
+
+                            DynamicData.setDynamicDataFromWebService( data.dynamic_data );
+
+							Addons.setDynamicDataFromWebService( data.addons );
+
+							if ( data.components.length === 0 ) {
+
+								app.triggerError(
+									'synchro:no-component',
+									{ type: 'web-service', where: 'app::syncWebService', message: 'No component found for this App. Please add components to the App on WordPress side.', data: data },
+									sync_cb_error
+								);
+
+							} else {
+
+								Utils.log( 'Components, menu items and globals retrieved from online.', { components: app.components, navigation: app.navigation, globals: app.globals } );
+								sync_cb_ok();
+
+							}
+
+						} else {
+							app.triggerError(
+								'synchro:wrong-answer',
+								{ type: 'web-service', where: 'app::syncWebService', message: 'Wrong "synchronization" web service answer', data: data },
+								sync_cb_error
+							);
+						}
+
+					} else if ( data.result.status == 0 ) {
+						app.triggerError(
+							'synchro:ws-return-error',
+							{ type: 'web-service', where: 'app::syncWebService', message: 'Web service "synchronization" returned an error : [' + data.result.message + ']', data: data },
+							sync_cb_error
+						);
+					} else {
+						app.triggerError(
+							'synchro:wrong-status',
+							{ type: 'web-service', where: 'app::syncWebService', message: 'Wrong web service answer status', data: data },
+							sync_cb_error
+						);
+					}
+
+				} else {
+					app.triggerError(
+						'synchro:wrong-format',
+						{ type: 'web-service', where: 'app::syncWebService', message: 'Wrong web service answer format', data: data },
+						sync_cb_error
+					);
+				}
+
+			};
+
+			ajax_args.error = function( jqXHR, textStatus, errorThrown ) {
+				app.triggerError(
+					'synchro:ajax',
+					{ type: 'ajax', where: 'app::syncWebService', message: textStatus + ': ' + errorThrown, data: { url: Config.wp_ws_url + ws_url, jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown } },
+					sync_cb_error
+				);
+			};
+
+			$.ajax( ajax_args );
+	  };
+
+	var fetchPostComments = function ( post_id, cb_ok, cb_error ) {
+
+		var token = WsToken.getWebServiceUrlToken( 'comments-post' );
+		var ws_url = token + '/comments-post/' + post_id;
+
+		var comments = new Comments.Comments;
+
+		/**
+		 * Use this 'comments-globals' filter if you defined custom global
+		 * types (other than posts and pages) that have comments associated to.
+		 */
+		var comments_globals = Hooks.applyFilters( 'comments-globals', [ 'posts', 'pages' ], [ post_id ] );
+
+		var post = null;
+		var item_global = '';
+
+		comments_globals.every( function ( global ) {
+			post = app.globals[global].get( post_id );
+			if ( post != undefined ) {
+				item_global = global;
+			}
+			return post === undefined; //To make the loop break as soon as post != undefined
+		} );
+
+		if ( post != undefined && post != null ) {
+
+			/**
+			 * Filter 'web-service-params' : use this to send custom key/value formated
+			 * data along with the web service. Those params are passed to the server
+			 * (via $_GET) when calling the web service.
+			 *
+			 * Filtered data : web_service_params : JSON object where you can add your custom web service params
+			 * Filter arguments :
+			 * - web_service_name : string : name of the current web service ('get-post-comments' here).
+			 */
+			var web_service_params = Hooks.applyFilters( 'web-service-params', { }, [ 'get-post-comments' ] );
+
+			//Build the ajax query :
+			var ajax_args = {
+				data: web_service_params
+			};
+
+			/**
+			 * Filter 'ajax-args' : allows to customize the web service jQuery ajax call.
+			 * Any jQuery.ajax() arg can be passed here except for : 'url', 'type', 'dataType',
+			 * 'success' and 'error' that are reserved by app core.
+			 *
+			 * Filtered data : ajax_args : JSON object containing jQuery.ajax() arguments.
+			 * Filter arguments :
+			 * - web_service_name : string : name of the current web service ('get-post-comments' here).
+			 */
+			ajax_args = Hooks.applyFilters( 'ajax-args', ajax_args, [ 'get-post-comments' ] );
+
+			ajax_args.url = Config.wp_ws_url + ws_url;
+
+			ajax_args.type = 'GET';
+
+			ajax_args.dataType = 'json';
+
+			ajax_args.success = function ( data ) {
+				_.each( data.items, function ( value, key, list ) {
+					comments.add( value );
+				} );
+				
+				post.set( 'nb_comments', comments.length );
+				post.save();
+						
+				cb_ok( comments, post, item_global );
+			};
+
+			ajax_args.error = function ( jqXHR, textStatus, errorThrown ) {
+				app.triggerError(
+					'comments:ajax',
+					{ type: 'ajax', where: 'app::fetchPostComments', message: textStatus + ': ' + errorThrown, data: { url: Config.wp_ws_url + ws_url, jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown } },
+					cb_error
+				);
+			};
+
+			$.ajax( ajax_args );
+
+		} else {
+			app.triggerError(
+				'comments:post-not-found',
+				{ type: 'not-found', where: 'app::fetchPostComments', message: 'Post ' + post_id + ' not found.' },
+				cb_error
+			);
+		}
+	};
+
+	app.getPostComments = function ( post_id, cb_ok, cb_error, force_refresh ) {
+
+		force_refresh = force_refresh === true;
+
+		var post_comments_memory = app.comments.get( post_id );
+		if ( post_comments_memory && !force_refresh ) {
+			
+			var post_comments = post_comments_memory.get( 'post_comments' );
+			var post = post_comments_memory.get( 'post' );
+			var item_global = post_comments_memory.get( 'item_global' );
+
+			Utils.log( 'Comments retrieved from cache.', { comments: post_comments, post: post, item_global: item_global });
+
+			cb_ok( post_comments, post, item_global );
+
+		} else {
+			
+			fetchPostComments(
+				post_id,
+				function( post_comments, post, item_global ) {
+					Utils.log( 'Comments retrieved from online.', { comments: post_comments, post: post, item_global: item_global } );
+
+					//Memorize retrieved comments:
+					app.comments.addPostComments( post_id, post, item_global, post_comments );
+
+					cb_ok( post_comments, post, item_global );
+				},
+				function( error ) {
+					cb_error( error );
+				}
+			);
+		}
+
+	};
+
+      app.getPostGlobal = function( id, global_default ) {
+      	var global = app.getCurrentScreenGlobal( global_default );
+
+      	return Hooks.applyFilters( 'post-global', global, [id, global_default] );
+      };
+
+      app.getMoreOfComponent = function( component_id, cb_ok, cb_error, use_standard_pagination ) {
+		  
+			use_standard_pagination = ( use_standard_pagination !== undefined ) && use_standard_pagination === true;
+			
+			var current_screen = app.getCurrentScreenData();
+			var current_component_id = '';
+			if ( current_screen.component_id && app.componentExists( current_screen.component_id ) ) {
+				current_component_id = current_screen.component_id;
+			}
+			
+			/**
+			 * Use this 'use-standard-pagination' filter to set standard pagination type for the component.
+			 * 
+			 * WP-AppKit supports 2 kind of pagination: 
+			 * 
+			 * - "Infinite Scroll pagination": we retrieve posts before the last post in the list (by passing its id in "before_id" param).
+			 *   It avoids post duplication when getting page>1 and a new post was created in the meantime.
+			 *   This is the default behaviour for the "Get More Posts" button in WP-AppKit's post lists.
+			 * 
+			 * - "Standard pagination": corresponds to the standard use of "paged" param in WP_Query.
+			 *   Return true as a result of this 'use-standard-pagination' filter to activate it.
+			 * 
+			 * Those 2 pagination types are exclusive: you can't use both at the same time.
+			 * If standard pagination is set, infinite scroll pagination is ignored.
+			 * 
+			 * @param use_standard_pagination   {boolean}     Set this to true to activate standard pagination (default false)
+			 * @param current_component_id      {string}      String identifier for the component the "get more" is called on
+			 * @param current_screen            {JSON Object} Current screen on which "get more" is called
+			 */
+			use_standard_pagination = Hooks.applyFilters( 'use-standard-pagination', use_standard_pagination, [ current_component_id, current_screen ] );
+		  
+			var component = app.components.get( component_id );
+			if ( component ) {
+
+				var component_data = component.get( 'data' );
+
+				if ( component_data.hasOwnProperty( 'ids' ) ) {
+
+					var token = WsToken.getWebServiceUrlToken( 'component' );
+					var ws_url = token + '/component/' + component_id;
+
+					var last_item_id = _.last( component_data.ids );
+					
+					var web_service_params = {};
+					
+					if ( use_standard_pagination ) {
+						var current_pagination_page = component_data.query.hasOwnProperty( 'pagination_page' ) && component_data.query.pagination_page > 0 ? 
+													  parseInt( component_data.query.pagination_page ) : 1;
+						web_service_params.pagination_page = current_pagination_page + 1;
+					} else {
+						web_service_params.before_item = last_item_id;
+					}
+
+					/**
+					* Filter 'web-service-params' : use this to send custom key/value formated
+					* data along with the web service. Those params are passed to the server
+					* (via $_GET) when calling the web service.
+					*
+					* Filtered data : web_service_params : JSON object where you can add your custom web service params
+					* Filter arguments :
+					* - web_service_name : string : name of the current web service ('get-more-of-component' here).
+					*/
+					var web_service_params = Hooks.applyFilters( 'web-service-params', web_service_params, ['get-more-of-component'] );
+
+					//Build the ajax query :
+					var ajax_args = {
+						data: web_service_params
+					};
+
+					/**
+					 * Filter 'ajax-args' : allows to customize the web service jQuery ajax call.
+					 * Any jQuery.ajax() arg can be passed here except for : 'url', 'type', 'dataType',
+					 * 'success' and 'error' that are reserved by app core.
+					 *
+					 * Filtered data : ajax_args : JSON object containing jQuery.ajax() arguments.
+					 * Filter arguments :
+					 * - web_service_name : string : name of the current web service ('get-more-of-component' here).
+					 */
+					ajax_args = Hooks.applyFilters( 'ajax-args', ajax_args, [ 'get-more-of-component' ] );
+
+					ajax_args.url = Config.wp_ws_url + ws_url;
+
+					ajax_args.type = 'GET';
+
+					ajax_args.dataType = 'json';
+
+					ajax_args.success = function( answer ) {
+						if ( answer.result && answer.result.status == 1 ) {
+							if ( answer.component.slug == component_id ) {
+								var global = answer.component.global;
+								if ( app.globals.hasOwnProperty( global ) ) {
+
+									var new_ids = _.difference( answer.component.data.ids, component_data.ids );
+									
+									component_data.query.pagination_page = answer.component.data.query.pagination_page;
+
+									component_data.ids = _.union( component_data.ids, answer.component.data.ids ); //merge ids
+									component.set( 'data', component_data );
+
+									var current_items = app.globals[global];
+									_.each( answer.globals[global], function( item, id ) {
+										current_items.add( _.extend( { id: id }, item ) ); //auto merges if "id" already in items
+									} );
+
+									var new_items = [ ];
+									_.each( new_ids, function( item_id ) {
+										new_items.push( current_items.get( item_id ) );
+									} );
+
+									var nb_left = component_data.total - component_data.ids.length;
+									var is_last = !_.isEmpty( answer.component.data.query.is_last_page ) ? true : nb_left <= 0;
+
+									Utils.log( 'More content retrieved for component', { component_id: component_id, new_ids: new_ids, new_items: new_items, component: component } );
+
+									app.triggerInfo( 'component:get-more', { new_items: new_items, is_last: is_last, nb_left: nb_left, new_ids: new_ids, global: global, component: component }, cb_ok );
+								} else {
+									app.triggerError(
+										'getmore:global-not-found',
+										{ type: 'not-found', where: 'app::getMoreOfComponent', message: 'Global not found : ' + global },
+										cb_error
+									);
+								}
+							} else {
+								app.triggerError(
+									'getmore:wrong-component-id',
+									{ type: 'not-found', where: 'app::getMoreOfComponent', message: 'Wrong component id : ' + component_id },
+									cb_error
+								);
+							}
+						} else {
+							app.triggerError(
+								'getmore:ws-return-error',
+								{ type: 'web-service', where: 'app::getMoreOfComponent', message: 'Web service "component" returned an error : [' + answer.result.message + ']' },
+								cb_error
+							);
+						}
+					};
+
+					ajax_args.error = function( jqXHR, textStatus, errorThrown ) {
+						app.triggerError(
+							'getmore:ajax',
+							{ type: 'ajax', where: 'app::getMoreOfComponent', message: textStatus + ': ' + errorThrown, data: { url: Config.wp_ws_url + ws_url, jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown } },
+							cb_error
+						);
+					};
+
+					$.ajax( ajax_args );
+				}
+			}
+      };
+
+	/**
+	 * Update items for the given global
+	 *
+	 * @param {string} global The global we want to update items for
+	 * @param {JSON Object} items Global items WITH ITEM ID AS KEY
+	 * @param {string} type 'update' to merge items, or 'replace' to delete then replace by new items
+	 * @param {boolean} persistent Set to true to save global items to Local Storage
+	 * @returns {JSON object} feedback data
+	 */
+	var update_global_items = function( global, items, type, persistent ) {
+
+		type = ( type !== undefined ) ? type : 'update';
+		persistent = ( persistent !== undefined ) && persistent === true;
+
+		var result = { ok: true, message: '', type: '', data: {} };
+
+		if ( type !== 'update' && type !== 'replace' ) {
+			result.ok = false;
+			result.type = 'bad-format';
+			result.message = 'Wrong type : '+ type;
+			return result;
+		}
+
+		//Create the global if does not exist :
+		if ( !app.globals.hasOwnProperty( global ) ) {
+			app.globals[global] = new Items.Items( [], { global: global } );
+		}
+
+		var current_items = app.globals[global];
+
+		var original_ids = [ ];
+		_.each( current_items, function( item, id ) {
+			original_ids.push( id );
+		} );
+
+		if ( type == "replace" ) {
+			current_items.resetAll();
+		}
+
+		var items_ids = [ ];
+		_.each( items, function( item, id ) {
+			items_ids.push( id );
+			current_items.add( _.extend( { id: id }, item ), { merge: true } ); //merge if "id" already in items
+		} );
+
+		var new_ids = [ ];
+		if ( type == "replace" ) {
+			new_ids = items_ids;
+		} else {
+			new_ids = _.difference( items_ids, original_ids );
+		}
+
+		var new_items = [ ];
+		_.each( new_ids, function( item_id ) {
+			new_items.push( current_items.get( item_id ) );
+		} );
+
+		if ( persistent ) {
+			current_items.saveAll();
+		}
+
+		result.data = { new_ids: new_ids, new_items: new_items, global: global, items: current_items };
+
+		return result;
+	};
+
+	 /**
+	 * Update a component
+	 *
+	 * @param JSON object new_component Component containing new data
+	 * @param array new_globals Array of new items referenced by the new component
+	 * @param string type Type of update. Can be :
+	 * - "update" : merge new with existing component data,
+	 * - "replace" : delete current component data, empty the corresponding global, and replace with new
+	 * - "replace-keep-global-items" (default) : for list components : replace component items ids and merge global items
+	 * @param boolean persistent (default false). If true, new data is stored in local storage.
+	 * @returns {JSON object} feedback data
+	 */
+	var update_component = function( new_component, new_globals, type, persistent ) {
+
+		type = ( type !== undefined ) ? type : 'replace-keep-global-items';
+		persistent = ( persistent !== undefined ) && persistent === true;
+
+		var result = { ok:true, message:'', type: '', data: {} };
+
+		if ( !new_component.data || !new_component.slug ) {
+			//Passed object is not a well formated component
+			result.ok = false;
+			result.type = 'bad-format';
+			result.message = 'Wrong component format';
+			return result;
+		}
+
+		if ( type !== 'update' && type !== 'replace' && type !== 'replace-keep-global-items' ) {
+			result.ok = false;
+			result.type = 'bad-format';
+			result.message = 'Wrong type : '+ type;
+			return result;
+		}
+
+		var existing_component = app.components.get( new_component.slug );
+    	if( existing_component ) {
+
+			var existing_component_data = existing_component.get( 'data' );
+			var new_component_data = new_component.data;
+			
+			if ( new_component_data.hasOwnProperty( 'ids' ) ) { //List component
+
+				if( new_component.global ) {
+
+					var global = new_component.global;
+					if ( !app.globals.hasOwnProperty( global ) ) {
+						var items = new Items.Items( [], { global: global } );
+						app.globals[global] = items;
+					}
+
+					var new_ids = [ ];
+					if ( type === "replace" || type === "replace-keep-global-items" ) {
+						new_ids = new_component_data.ids;
+					} else {
+						new_ids = _.difference( new_component_data.ids, existing_component_data.ids );
+						new_component_data.ids = _.union( existing_component_data.ids, new_component_data.ids ); //merge ids
+					}
+
+					existing_component.set( 'data', new_component_data );
+
+					var current_items = app.globals[global];
+					if ( type === "replace" ) {
+						current_items.resetAll();
+					}
+
+					_.each( new_globals[global], function( item, id ) {
+						current_items.add( _.extend( { id: id }, item ), { merge: true } ); //merge if "id" already in items
+					} );
+
+					var new_items = [ ];
+					_.each( new_ids, function( item_id ) {
+						new_items.push( current_items.get( item_id ) );
+					} );
+					
+					if ( persistent ) {
+						existing_component.save();
+						current_items.saveAll();
+					}
+
+					result.data = { new_ids: new_ids, new_items: new_items, component: existing_component };
+
+				} else {
+					//A list component must have a global
+					result.ok = false;
+					result.type = 'bad-format';
+					result.message = 'List component must have a global';
+				}
+
+			} else { //Non list component
+
+				if ( type == "update" ) {
+					new_component_data = _.extend( existing_component_data, new_component_data );
+				} else { //replace or replace-keep-global-items
+					//nothing : new_component_data is ready to be set
+				}
+
+				existing_component.set( 'data', new_component_data );
+
+				if ( persistent ) {
+					existing_component.save();
+				}
+
+				if( new_component.global ) { //Page component for example
+
+					var global = new_component.global;
+					if ( !app.globals.hasOwnProperty( global ) ) {
+						var items = new Items.Items( [], { global: global } );
+						app.globals[global] = items;
+					}
+
+					var current_items = app.globals[global];
+					if ( type == "replace" ) {
+						current_items.resetAll();
+					}
+
+					_.each( new_globals[global], function( item, id ) {
+						current_items.add( _.extend( { id: id }, item ), { merge: true } ); //merge if "id" already in items
+					} );
+
+					if ( persistent ) {
+						current_items.save();
+					}
+
+				}
+
+				result.data = { component: existing_component };
+
+			}
+
+		} else {
+			result.ok = false;
+			result.type = 'not-found';
+			result.message = 'Component not found : ' + new_component.slug;
+		}
+
+		return result;
+	};
+
+	/**
+	 * Deletes items for the given global.
+	 *
+	 * @param {string} global
+	 * @param {boolean} persistent If true, will be stored in local storage
+	 */
+	app.resetGlobalItems = function( global, persistent) {
+		persistent = ( persistent !== undefined ) && persistent === true;
+		update_global_items( global, {}, 'replace', persistent );
+	};
+
+	/**
+	 * Live query web service
+	 *
+	 * @param JSON Object web_service_params Any params that you want to send to the server.
+	 *        The following params are automatically recognised and interpreted on server side :
+	 *        - wpak_component_slug : { string | Array of string } components to make query on
+	 *        - wpak_query_action : { string } 'get-component' to retrieve the full component, or 'get-items' to retrieve choosen component items
+	 *        - wpak_items_ids : { int | array of int } If wpak_query_action = 'get-items' : component items ids to retrieve
+	 * @param callback cb_ok
+	 * @param callback cb_error
+	 * @param options JSON Object : allowed settings :
+	 * - auto_interpret_result Boolean (default true). If false, web service answer must be interpreted in the cb_ok callback.
+	 * - type String : can be one of :
+	 *       -- "update" : merge new with existing component data,
+	 *       -- "replace" : delete current component data and replace with new
+	 *       -- "replace-keep-global-items" (default) : for list components : replace component ids and merge global items
+	 * - persistent Boolean (default false). If true, new data is stored in local storage.
+	 */
+	app.liveQuery = function( web_service_params, cb_ok, cb_error, options ) {
+
+		//auto_interpret_result defaults to true :
+		var auto_interpret_result = !options.hasOwnProperty('auto_interpret_result') || options.auto_interpret_result === true;
+
+		//interpretation_type defaults to 'replace-keep-global-items' :
+		var interpretation_type = options.hasOwnProperty('type') ? options.type : 'replace-keep-global-items';
+
+		//persistent defaults to false :
+		var persistent = options.hasOwnProperty('persistent') && options.persistent === true;
+
+		var token = WsToken.getWebServiceUrlToken( 'live-query' );
+		var ws_url = token + '/live-query';
+
+		/**
+		* Filter 'web-service-params' : use this to send custom key/value formatted
+		* data along with the web service. Those params are passed to the server
+		* (via $_GET) when calling the web service.
+		*
+		* Filtered data : web_service_params : JSON object where you can add your custom web service params
+		* Filter arguments :
+		* - web_service_name : string : name of the current web service ('live-query' here).
+		*/
+		web_service_params = Hooks.applyFilters( 'web-service-params', web_service_params, [ 'live-query' ] );
+
+		//Build the ajax query :
+		var ajax_args = {
+			data: web_service_params
+		};
+
+		/**
+		 * Filter 'ajax-args' : allows to customize the web service jQuery ajax call.
+		 * Any jQuery.ajax() arg can be passed here except for : 'url', 'type', 'dataType',
+		 * 'success' and 'error' that are reserved by app core.
+		 *
+		 * Filtered data : ajax_args : JSON object containing jQuery.ajax() arguments.
+		 * Filter arguments :
+		 * - web_service_name : string : name of the current web service ('get-more-of-component' here).
+		 */
+		ajax_args = Hooks.applyFilters( 'ajax-args', ajax_args, [ 'live-query' ] );
+
+		ajax_args.url = Config.wp_ws_url + ws_url;
+
+		ajax_args.type = 'GET';
+
+		ajax_args.dataType = 'json';
+
+		ajax_args.success = function( answer ) {
+
+			if ( answer.result && answer.result.status == 1 ) {
+
+				//If we asked to auto interpret and the ws answer is correctly
+				//formated, we do the correct treatment according to answer fields :
+				if ( auto_interpret_result ) {
+
+					//See if components data were returned ("get-component" action): 
+					//if so, update the corresponding component(s) :
+					var new_components = {};
+					if ( answer.components ) {
+						new_components = answer.components;
+					} else if( answer.component ) {
+						new_components[answer.component.slug] = answer.component;
+					}
+
+					if( !_.isEmpty( new_components ) ) {
+
+						//"get-component" case (as opposed to "get-items").
+
+						var error_message = '';
+						var update_results = {};
+
+						_.each( new_components, function( component ) {
+
+							var result = update_component( component, answer.globals, interpretation_type, persistent );
+							update_results[component.slug] = result;
+
+							if ( result.ok ) {
+								Utils.log( 'Live query update component "'+ component.slug +'" OK.', result );
+							} else {
+								Utils.log( 'Error : Live query : update_component "' + component.slug + '"', result, component );
+								error_message += ( result.message + ' ' );
+							}
+
+						} );
+
+						if ( error_message === '' ) {
+							if ( cb_ok ) {
+								cb_ok( answer, update_results );
+							}
+						} else {
+							app.triggerError(
+								'live-query:update-component-error',
+								{ type: 'mixed', where: 'app::liveQuery', message: error_message, data: { results: update_results } },
+								cb_error
+							);
+						}
+
+					} else if ( answer.globals && !_.isEmpty( answer.globals ) ) {
+
+						//"get-items" case (as opposed to "get-component").
+						//> No component returned, but some global items :
+						//update current global items with new items sent :
+
+						var error_message = '';
+						var update_results = {};
+
+						_.each( answer.globals, function( items, global ) {
+
+							var result = update_global_items( global, items, interpretation_type, persistent );
+							update_results[global] = result;
+
+							if ( result.ok ) {
+								Utils.log( 'Live query update global "'+ global +'" OK.', result );
+							} else {
+								Utils.log( 'Error : Live query : update_global_items "' + global + '"', result, items );
+								error_message += ( result.message + ' ' );
+							}
+
+						} );
+
+						if ( error_message === '' ) {
+							if ( cb_ok ) {
+								cb_ok( answer, update_results );
+							}
+						} else {
+							app.triggerError(
+								'live-query:update-global-items-error',
+								{ type: 'mixed', where: 'app::liveQuery', message: error_message, data: { results: update_results } },
+								cb_error
+							);
+						}
+
+					} else {
+						app.triggerError(
+							'live-query:no-auto-interpret-action-found',
+							{ type: 'not-found', where: 'app::liveQuery', message: 'Live Query web service : could not auto interpret answer', data: {answer : answer} },
+							cb_error
+						);
+					}
+
+				} else {
+
+					Utils.log( 'Live query ok (no auto interpret). Web Service answer : "', answer, ajax_args );
+
+					//The 'live-query' web service answer must be interpreted
+					//manually in cb_ok() :
+					if ( cb_ok ) {
+						cb_ok( answer );
+					}
+
+				}
+
+			} else {
+				app.triggerError(
+					'live-query:ws-return-error',
+					{ type: 'web-service', where: 'app::liveQuery', message: 'Web service "liveQuery" returned an error : [' + answer.result.message + ']' },
+					cb_error
+				);
+			}
+		};
+
+		ajax_args.error = function( jqXHR, textStatus, errorThrown ) {
+			app.triggerError(
+				'live-query:ajax',
+				{ type: 'ajax', where: 'app::liveQuery', message: textStatus + ': ' + errorThrown, data: { url: Config.wp_ws_url + ws_url, jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown } },
+				cb_error
+			);
+		};
+
+		$.ajax( ajax_args );
+	};
+	
+	  app.getPageComponentByPageId = function( page_id, default_to_first_component ) {
+			var page_component = _.find( this.getComponents(), function( component ){
+				return component.type === 'page' && component.global === 'pages' && component.data.root_id === page_id;
+			} );
+			
+			if ( !page_component && default_to_first_component === true ) {
+				page_component = this.findFirstComponentOfType( 'page' );
+			}
+			
+			return page_component;
+	  };
+
+      app.getComponentData = function(component_id){
+    	  var component_data = null;
+
+    	  var component = app.components.get(component_id);
+
+    	  if( component ){
+    		  var component_type = component.get('type');
+    		  switch(component_type){
+	    		  case 'posts-list':
+	    			  var data = component.get('data');
+	    			  var items = new Items.ItemsSlice();
+    				  var global = app.globals[component.get('global')];
+    				  _.each(data.ids,function(post_id, index){
+    					  items.add(global.get(post_id));
+    				  });
+
+    				  component_data = {
+    						  type: component_type,
+    						  view_data: {posts:items,title: component.get('label'), total: data.total},
+    						  data: data
+    				  };
+	    			  break
+    			  case 'page':
+	    			  var data = component.get('data');
+	    			  var component_global = component.get('global');
+	    			  var global = app.globals[component_global];
+	    			  if( global ){
+	    				  var page = global.get(data.root_id);
+	    				  if( page ){
+	    					  //Page component are directly redirected to "page" route in router.js.
+	    					  //> Don't need "view_data" here.
+	    					  component_data = {
+	    							  type: component_type,
+	        						  view_data: {},
+	        						  data: data
+	        				  };
+	    				  }
+	    			  }
+	    			  break;
+	    		  case 'hooks':
+	    			  if( component.get('data') ){
+		    			  var data = component.get('data');
+		    			  if( component.get('global') ){
+			    			  var global = app.globals[component.get('global')];
+			    			  if( global ){
+			    				  if( data.hasOwnProperty('ids') ){
+			    					  var items = new Items.ItemsSlice();
+			    					  _.each(data.ids,function(post_id, index){
+			        					  items.add(global.get(post_id));
+			        				  });
+
+			    					  var view_data = {items:items.toJSON(),title: component.get('label')};
+			    					  if( data.hasOwnProperty('total') ){
+			    						  view_data = _.extend(view_data,{total:data.total});
+			    					  }
+
+			    					  component_data = {
+		    							  type: 'hooks-list',
+		        						  view_data: view_data,
+		        						  data: data
+			        				  };
+
+			    				  }else{
+			    					  //We have a global, but no ids : it's just as if we had no global :
+			    					  component_data = {
+		    							  type: 'hooks-no-global',
+		        						  view_data: data,
+		        						  data: data
+			        				  };
+			    				  }
+			    			  }else{
+									//We have a global, but no ids : it's just as if we had no global :
+									component_data = {
+										type: 'hooks-no-global',
+										view_data: data,
+										data: data
+									};
+							  }
+		    			  }else{
+		    				  Utils.log('app.js warning : custom component has a global but no ids : the global will be ignored.');
+		    				  component_data = {
+    							  type: 'hooks-no-global',
+        						  view_data: data,
+        						  data: data
+	        				  };
+		    			  }
+    		  		  }else{
+						  //No component.data, which should not happen, unless something went wrong on server side
+						  //when building the component data. This can happen for example when a custom component 
+						  //is added to an app without providing the correct hook name or not setting correct data 
+						  //in hook.
+    		  			  app.triggerError(
+  			    			  'getcomponentdata:hooks:no-data',
+  			    			  {type:'wrong-data',where:'app::getComponentData',message: 'Custom component ['+ component_id +'] has no data attribute: please check that the component\'s hook is set correctly.',data:{component:component}}
+  			    		  );
+    		  		  }
+	    			  break;
+				  default:
+						component_data = {
+							type: '',
+							view_data: {},
+							data: {}
+						};
+						component_data = Hooks.applyFilters('component-data',component_data,[component]);
+						if( component_data.type == '' ) {
+							component_data = null;
+						}
+						break;
+    		  }
+    	  };
+
+    	  if( component_data != null ){
+    		  component_data = _.extend({id:component.get('id'),label:component.get('label'),global:component.get('global')},component_data);
+    	  }
+
+    	  return component_data;
+      };
+
+      app.getGlobalItems = function(global_key,items_ids,raw_items){
+    	  var items = []; //Must be an array (and not JSON object) to keep items order.
+
+		  raw_items = raw_items === undefined ? false : ( raw_items === true );
+
+    	  if( _.has(app.globals,global_key) ){
+			  var global = app.globals[global_key];
+			  if( items_ids !== undefined && items_ids.length ) {
+				_.each(items_ids,function(item_id, index){
+					var item = global.get(item_id);
+					if( item ) {
+						items.push( raw_items ? item : item.toJSON() );
+					}
+				});
+			  } else {
+				  global.each( function(item, key){
+					  items.push( raw_items ? item : item.toJSON() );
+				  });
+			  }
+    	  }
+
+    	  return items;
+      };
+
+	  app.getGlobalItemsSlice = function( global_key, items_ids ) {
+			var items = new Items.ItemsSlice();
+
+			if ( _.has( app.globals, global_key ) ) {
+				var global = app.globals[global_key];
+				if ( items_ids !== undefined && items_ids.length ) {
+					_.each( items_ids, function( post_id ) {
+						items.add( global.get( post_id ) );
+					} );
+				} else {
+					global.each( function(item, key){
+					  items.add( item );
+				  });
+				}
+			}
+
+			return items;
+	  };
+
+      app.getGlobalItem = function(global_key,item_id){
+    	  var item = null;
+
+    	  if( _.has(app.globals,global_key) ){
+			  var global = app.globals[global_key];
+			  var item_raw = global.get(item_id);
+			  if( item_raw ){
+				  item = item_raw.toJSON();
+			  }
+    	  }
+
+    	  return item;
+      };
+	  
+		/**
+		 * Retrieve items (posts/pages etc) from remote server and merge them into existing app's items.
+		 * 
+		 * @param Array items array of ids of pages/posts to retrieve. 
+		 * @param JSON Object options:
+		 *  - component_id:   Int (optional) Slug of the component we want to retrieve items for.
+		 *                    If not provided, the first component of "component_type" found
+		 *                    will be used.
+		 *  - component_type: String (optional) Type of component ("posts-list", "pages") we want to
+		 *                    retrieve items for. Only useful if component_id is not provided.
+		 *                    If not provided, defaults to "posts-list".
+		 *  - persistent:     Boolean (optional) Whether to persist retrieved items to local storage.
+		 *                    Defaults to true.
+		 *  - success:        Callback (optional) Called if items are retrieved successfully
+		 *  - error:          Callback (optional) Called if an error occured while retrieving items from server.
+		 *                    App error events are also triggered in that case.
+		 */
+		app.getItemsFromRemote = function ( items_ids, options ) {
+
+			options = options || {};
+			
+			Utils.log('Retrieving items from remote server.', items_ids);
+			
+			//Posts/pages/items can only be retrieved by component, as their content is formatted
+			//according to the component type they belong to.
+			var component = null;
+			if ( options.component_id ) {
+				if ( this.components.get( options.component_id ) ) {
+					component = this.components.get( options.component_id );
+				} else {
+					this.triggerError(
+						'get-items:remote:wrong-component-given',
+						{ type:'wrong-data', where:'app::getItemsFromRemote', message: 'Provided component not found ['+ options.component_id +']', data: { options: options, items_ids: items_ids } },
+						options.error
+					);
+					return;
+				}
+			}
+			
+			if ( !component ) {
+				var component_type = options.component_type ? options.component_type : 'posts-list';
+				component = this.findFirstComponentOfType( component_type );
+			}
+
+			if ( component ) {
+
+				var _this = this;
+				
+				var persistent = !options.persistent || options.persistent === true;
+
+				//Call liveQuery to retrieve the given items from server and store them in local storage:
+				this.liveQuery(
+					{
+						wpak_component_slug: component.id,
+						wpak_query_action: 'get-items',
+						wpak_items_ids: items_ids
+					},
+					function( answer, results ){
+
+						var items_found = _.find( results, function( result ) {
+							return result.data.new_items.length > 0;
+						} );
+
+						if ( items_found ) {
+							Utils.log('Items retrieved successfully from remote server.', items_ids, results);
+							if ( options.success ) {
+								options.success( answer, component, results );
+							}
+						} else {
+							//Requested posts where not found. Trigger error
+							if ( options.error ) {
+								_this.triggerError(
+									'get-items:remote:no-item-found',
+									{ type:'not-found', where:'app::getItemsFromRemote', message: 'Requested items not found', data: { options: options, items_ids: items_ids } },
+									options.error
+								);
+							}
+						}
+
+					},
+					function( error ){
+						//liveQuery error: error event has been triggered in liveQuery,
+						//simply call the error callback here:
+						if ( options.error ) {
+							options.error( error );
+						}
+					},
+					{
+						type: 'update',
+						persistent: persistent
+					}
+				);
+
+			} else {
+				app.triggerError(
+					'get-items:remote:wrong-component',
+					{ type:'wrong-data', where:'app::getItemsFromRemote', message: 'Could not find a valid component', data: { options: options, items_ids: items_ids } },
+					options.error
+				);
+			}
+		};
+		
+		app.findFirstComponentOfType = function( component_type ) {
+			return _.findWhere( this.getComponents(), { type: component_type } )
+		};
+		
+		app.loadRouteItemFromRemote = function( item_id, item_global, component_type, options ){
+			var load_from_remote =  Hooks.applyFilters('load-unfound-items-from-remote', true, [item_id,item_global]);
+			if ( load_from_remote ) {
+
+				/**
+				 * Use 'load-unfound-items-component-id' and 'load-unfound-items-component-type' to customize
+				 * which component is used to retrieve the item from remote. 
+				 * Default is the first "posts-list" component found.
+				 */
+				var item_component_id = Hooks.applyFilters('load-unfound-items-component-id', '', [item_id,item_global]);
+				var item_component_type = Hooks.applyFilters('load-unfound-items-component-type', component_type, [item_id,item_global]);
+
+				this.triggerInfo( 'load-item-from-remote:start', { 
+					item_id: item_id, item_global: item_global, item_component_id: item_component_id, item_component_type: item_component_type 
+				} );
+				
+				var global = this.globals[item_global];
+				
+				var _this = this;
+
+				this.getItemsFromRemote( [item_id], {
+					component_id: item_component_id,
+					component_type: item_component_type,
+					success: function( answer, component, results ) {
+						var item = global.get(item_id);
+
+						_this.triggerInfo( 'load-item-from-remote:stop', { 
+							item_id: item_id, item_global: item_global, item: item, 
+							item_component_id: item_component_id, item_component_type: item_component_type,
+							success: !!item
+						} );
+
+						if ( item ) {
+
+							//Success!
+							if ( options.success ) {
+								options.success( item, component );
+							}
+
+						} else {
+							Utils.log('loadRouteItemFromRemote : unexpected error "'+ item_id +'" not found in global "'+ item_global +'" even after remote call.');
+
+							_this.triggerError(
+								'get-items:remote:item-not-found-in-global',
+								{ type:'not-found', where:'app::loadRouteItemFromRemote', message: 'Requested items not found', data: { 
+									item_id: item_id, item_global: item_global, item: item, 
+									item_component_id: item_component_id, item_component_type: item_component_type
+								} }
+							);
+					
+							if ( options.error ) {
+								options.error();
+							}
+						}
+					},
+					error: function() {
+
+						_this.triggerInfo( 'load-item-from-remote:stop', { 
+							item_id: item_id, item_global: item_global, 
+							item_component_id: item_component_id, item_component_type: item_component_type,
+							success: false
+						} );
+
+						if ( options.error ) {
+							options.error();
+						}
+					}
+					
+				} );
+
+			} else {
+				if ( options.error ) {
+					options.error();
+				}
+			}
+		};
+
+	  /**
+       * App options:
+       */
+
+	  // Retrieve all existing options
+	  var fetchOptions = function( callback ){
+      	app.options.fetch( {
+      		'success': function( appOptions, response, options ) {
+				Utils.log( 'Options retrieved from local storage.', { options: appOptions } );
+				app.saveOptions( callback );
+	      	},
+	      	'error': function( appOptions, response, options ) {
+	      		app.saveOptions( callback );
+	      	}
+      	});
+	  };
+
+      app.saveOptions = function( callback ) {
+      	// Retrieve options from Config and store them locally
+      	_.each( Config.options, function( value, key, list ) {
+      		// Don't override an existing option
+      		if( undefined === app.options.get( key ) ) {
+      			Utils.log( 'Option not existing: adding to collection', { key: key, value: value } );
+      			app.options.add( { id: key, value: value } );
+      		}
+      	});
+	  	app.options.saveAll();
+
+	  	// If a callback was passed, call it
+	  	if( undefined !== callback ) {
+	  		callback();
+	  	}
+      };
+
+	  /**
+       * App init:
+       *  - register "resume" event
+       *  - set options
+	   *  - initialize addons
+       */
+      app.initialize = function ( callback ) {
+
+        //Activate pretty slugs via html5 pushstate for PWA:
+        //(this can be deactivated in theme by setting the param
+        //'use-html5-pushstate' to false)
+        if( Config.app_platform === 'pwa' && Config.app_type !== 'preview' ) {
+            app.setParam( 'use-html5-pushstate', true );
+            Utils.log( 'HTML5 pushstate mode activated.' );
+        }
+
+      	document.addEventListener( 'resume', app.onResume, false );
+
+		fetchOptions(function(){
+
+			Addons.initialize( function(){
+
+                DynamicData.initialize( function() {
+
+                    if( Config.debug_mode == 'on' ) {
+                        require( ['core/views/debug', 'jquery.velocity'], function( DebugView ) {
+                            var debugView = new DebugView();
+                            debugView.render();
+                        });
+                    }
+
+                    // If a callback was passed, call it
+                    if( undefined !== callback ) {
+                        callback();
+                    }
+
+                });
+				
+			});
+
+		});
+
+      };
+
+      /**
+       * Fires when the application was in background and is called to be in foreground again.
+       * Handles:
+       *  - deep links
+       */
+      app.onResume = function() {
+      	// If there is a defined launch URL, use it
+      	var route = DeepLink.getLaunchRoute();
+
+      	route = Hooks.applyFilters( 'resume-route', route, [Stats.getStats()] );
+
+      	if( route.length ) {
+      		app.router.navigate( route, { trigger: true } );
+      	}
+      };
+
+	//--------------------------------------------------------------------------
+	//Network : handle network state if the Network phonegap plugin is available
+
+	app.onOnline = function(){
+		vent.trigger('network:online');
+		Utils.log('Network event : online');
+	};
+
+	app.onOffline = function(){
+		vent.trigger('network:offline');
+		Utils.log('Network event : offline');
+	};
+
+    return app;
+
+});

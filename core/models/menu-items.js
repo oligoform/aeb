@@ -1,1 +1,21 @@
-;define(function(require){'use strict';var e=require('backbone'),n=e.Model.extend({defaults:{id:'',label:'',type:'',link:''}});var l=e.Collection.extend({model:n,});return{MenuItem:n,MenuItems:l}});
+define(function (require) {
+
+    "use strict";
+
+    var Backbone    = require('backbone');
+
+    var MenuItem = Backbone.Model.extend({
+    	defaults : {
+    		id : "",
+            label : "",
+            type : "",
+            link : ""
+        }
+    });
+
+    var MenuItems = Backbone.Collection.extend({
+    	model : MenuItem,
+    });
+
+    return {MenuItem:MenuItem,MenuItems:MenuItems};
+});

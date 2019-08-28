@@ -1,1 +1,228 @@
-;require.config({baseUrl:'vendor',waitSeconds:10,paths:{core:'../core',lang:'../lang',addons:'../addons',root:'..'},shim:{'backbone':{deps:['underscore','jquery'],exports:'Backbone'},'underscore':{exports:'_'}}});require(['root/config'],function(e){if(e.app_type==='pwa'&&'serviceWorker' in navigator){navigator.serviceWorker.register(e.app_path+'service-worker-cache.js').then(function(){console.log('[WP-AppKit Service Worker] Registered')})};var n={theme:'../themes/'+e.theme};require.config({paths:n});require(['jquery','underscore','core/addons-internal','core/app-utils','core/app','core/router','core/region-manager','core/stats','core/phonegap/utils','core/lib/hooks'],function($,c,s,r,n,d,i,t,a,f){var u=function(){require(s.getJs('init','before'),function(){n.setIsLaunching(!0);n.initialize(function(){i.buildHead(function(){i.buildLayout(function(){i.buildHeader(function(){n.router=new d();require(s.getJs('theme','before'),function(){require(['theme/js/functions'],function(){i.handleNavigationInterception();var o=['single','archive'];o=f.applyFilters('preloaded-templates',o,[]);o=c.map(o,function(e){if(e.indexOf('/')===-1){e='theme/'+e};return'text!'+e+'.html'});require(o,function(){require(s.getJs('theme','after'),function(){n.sync(function(o){i.buildMenu(function(){t.updateVersion();t.incrementCountOpen();t.incrementLastOpenTime();if(e.debug_mode=='on'){r.log('App version : ',t.getVersionDiff());r.log('App opening  count : ',t.getCountOpen());r.log('Last app opening  was on ',t.getLastOpenDate())};n.launchRouting();if(o){o.resolve({ok:!0,message:'',data:{}})};n.triggerInfo('app-launched');if(n.getParam('refresh-at-app-launch')){require(['core/theme-app'],function(e){var o=t.getStats('last_sync'),i=n.options.get('refresh_interval');if(undefined===o||undefined===i||Date.now()>o+(i.get('value')*1000)){r.log('Refresh interval exceeded, refreshing',{last_updated:new Date(o),refresh_interval:i.get('value')});e.refresh()}})};a.hideSplashScreen();n.setIsLaunching(!1)})},function(e,o){n.launchRouting();var t='Error : App could not synchronize with website';if(e.id==='synchro:no-component'){t+=' : no component found in web service answer. Please add components to the App on WordPress side.'};r.log(t);if(o){o.reject({ok:!1,message:t,data:e})};n.triggerInfo('no-content');a.hideSplashScreen();n.setIsLaunching(!1)},!1)})},function(e){r.log('Error : could not preload templates',e);n.setIsLaunching(!1)})},function(e){r.log('Error : theme/js/functions.js not found',e);n.setIsLaunching(!1)})})})})})})})};if(a.isLoaded()){a.setNetworkEvents(n.onOnline,n.onOffline);document.addEventListener('deviceready',u,!1)}else{window.ononline=n.onOnline;window.onoffline=n.onOffline;$(document).ready(u)}})},function(){var e='WP AppKit error : config.js not found.';console&&console.log(e);document.write(e);var n=window.location.search.substring(1);if(n.length&&n.indexOf('wpak_app_id')!=-1){e='Please check that : ';e+='<br/> - you are connected to your WordPress back office,';e+='<br/> - WordPress permalinks are activated';console&&console.log(e);document.write('<br>'+e)}});
+require.config({
+
+    baseUrl: 'vendor',
+
+    waitSeconds: 10,
+
+    paths: {
+        core: '../core',
+		lang: '../lang',
+		addons: '../addons',
+        root: '..'
+    },
+
+    shim: {
+        'backbone': {
+            deps: ['underscore', 'jquery'],
+            exports: 'Backbone'
+        },
+        'underscore': {
+            exports: '_'
+		},
+		   
+		'leaflet': {
+            exports: 'L'
+        }, 
+        'leaflet.markercluster': {
+            deps: ['leaflet']
+		},
+		'L.Control.Locate': {
+            deps: ['leaflet']
+		}
+    }
+});
+
+require(['root/config'],function(Config){
+
+	//If Progressive Web App, activate service worker to cache app source files:
+	if ( Config.app_type === 'pwa' && 'serviceWorker' in navigator ) {
+		navigator.serviceWorker
+				.register( Config.app_path +'service-worker-cache.js' )
+				.then( function () {
+					console.log( '[WP-AppKit Service Worker] Registered' );
+				} );
+        
+	}
+
+	var dynamic_paths = {
+		theme: '../themes/'+ Config.theme
+	};
+
+	require.config({
+	    paths: dynamic_paths
+	});
+
+	require(['jquery', 'underscore', 'core/addons-internal', 'core/app-utils', 'core/app', 'core/router', 'core/region-manager', 'core/stats', 'core/phonegap/utils','core/lib/hooks'],
+			function ($, _, Addons, Utils, App, Router, RegionManager, Stats, PhoneGap, Hooks) {
+
+			var launch = function() {
+				
+				require(Addons.getJs('init','before'),function(){
+
+					App.setIsLaunching( true );
+
+					// Initialize application before using it
+					App.initialize( function() {
+
+						RegionManager.buildHead(function(){
+
+							RegionManager.buildLayout(function(){
+
+								RegionManager.buildHeader(function(){
+
+                                    App.router = new Router();
+
+									require(Addons.getJs('theme','before'),function(){
+										require(['theme/js/functions'],function(){
+											
+                                            /**
+                                             * Intercept navigation inside the app to trigger Backbone router navigation
+                                             * instead of browser page refresh. 
+                                             */
+                                            RegionManager.handleNavigationInterception();
+                                            
+											/**
+											 * Templates that are preloaded by default for before perf.
+											 * Note: we can't require 'page' template here as it is not required in themes.
+											 * But when implementing a theme with a 'page' template, it is recommended to 
+											 * preload it with the following 'preloaded-templates'.
+											 */
+											var preloaded_templates = ['single','archive'];
+											
+											/**
+											 * Define templates that are preloaded so that we don't have any delay
+											 * when requiring them dynamically.
+											 * For example use this filter to preload the 'page' template if you implement one in your theme.
+											 */
+											preloaded_templates = Hooks.applyFilters('preloaded-templates',preloaded_templates,[]);
+											
+											//Build 'text!path/template.html' dependencies from preloaded templates:
+											preloaded_templates = _.map( preloaded_templates, function( template ) {
+												if( template.indexOf( '/' ) === -1 ) {
+													template = 'theme/'+ template;
+												}
+												return 'text!'+ template +'.html';
+											} );
+											
+											require(preloaded_templates,function(){
+											
+												require(Addons.getJs('theme','after'),
+													function(){
+														App.sync(
+															function( deferred ){
+																RegionManager.buildMenu(function(){ //Menu items are loaded by App.sync
+
+																	Stats.updateVersion();
+																	Stats.incrementCountOpen();
+																	Stats.incrementLastOpenTime();
+
+																	if( Config.debug_mode == 'on' ){
+																		Utils.log( 'App version : ', Stats.getVersionDiff() );
+																		Utils.log( 'App opening  count : ', Stats.getCountOpen() );
+																		Utils.log( 'Last app opening  was on ', Stats.getLastOpenDate() );
+																	}
+
+																	App.launchRouting();
+
+                                                                    if ( deferred ) {
+                                                                        deferred.resolve( { ok: true, message: '', data: {} } );
+                                                                    }
+
+																	App.triggerInfo('app-launched'); //triggers info:app-ready, info:app-first-launch and info:app-version-changed
+
+																	//Refresh at app launch can be canceled using the 'refresh-at-app-launch' App param,
+																	//this is useful if we set a specific launch page and don't want to be redirected
+																	//after the refresh.
+																	if( App.getParam('refresh-at-app-launch') ){
+																		//Refresh at app launch : as the theme is now loaded, use theme-app :
+																		require(['core/theme-app'],function(ThemeApp){
+																			var last_updated = Stats.getStats( 'last_sync' );
+																			var refresh_interval = App.options.get( 'refresh_interval' );
+																			if( undefined === last_updated || undefined === refresh_interval || Date.now() > last_updated + ( refresh_interval.get( 'value' ) * 1000 ) ) {
+																				Utils.log( 'Refresh interval exceeded, refreshing', { last_updated: new Date( last_updated ), refresh_interval: refresh_interval.get( 'value' ) } );
+																				ThemeApp.refresh();
+																			}
+																		});
+																	}
+
+																	PhoneGap.hideSplashScreen();
+
+																	App.setIsLaunching( false );
+																});
+															},
+															function( error, deferred ){
+																App.launchRouting();
+
+																var error_message = "Error : App could not synchronize with website";
+
+																if ( error.id === 'synchro:no-component' ) {
+																	error_message += " : no component found in web service answer. Please add components to the App on WordPress side.";
+																} 
+
+																Utils.log( error_message );
+
+                                                                if ( deferred ) {
+                                                                    deferred.reject( { ok: false, message: error_message, data: error } );
+                                                                }
+
+																App.triggerInfo('no-content');
+                                                                
+                                                                PhoneGap.hideSplashScreen();
+
+                                                                App.setIsLaunching( false );
+															},
+															false //true to force refresh local storage at each app launch.
+														);
+
+													}
+												);
+											},
+											function(error){
+												Utils.log('Error : could not preload templates', error);
+												App.setIsLaunching( false );
+											});
+										},
+										function(error){
+											Utils.log('Error : theme/js/functions.js not found', error);
+											App.setIsLaunching( false );
+										});
+									});
+								});
+
+							});
+
+						});
+
+					});
+				});
+			};
+
+			if( PhoneGap.isLoaded() ){
+				PhoneGap.setNetworkEvents(App.onOnline,App.onOffline);
+				document.addEventListener('deviceready', launch, false);
+			}else{
+				window.ononline = App.onOnline;
+				window.onoffline = App.onOffline;
+				$(document).ready(launch);
+			}
+
+	});
+
+},function(){ //Config.js not found
+
+	//Can't use Utils.log here : log messages by hand :
+	var message = 'WP AppKit error : config.js not found.';
+	console && console.log(message);
+	document.write(message);
+
+	//Check if we are simulating in browser :
+	var query = window.location.search.substring(1);
+	if( query.length && query.indexOf('wpak_app_id') != -1 ){
+		message = 'Please check that : ';
+		message += '<br/> - you are connected to your WordPress back office,';
+		message += '<br/> - WordPress permalinks are activated';
+		console && console.log(message);
+		document.write('<br>'+ message);
+	}
+
+});

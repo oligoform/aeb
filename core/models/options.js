@@ -1,1 +1,35 @@
-;define(function(require){'use strict';var t=require('backbone'),r=require('underscore'),n=require('root/config');require('localstorage');var a=t.Model.extend({defaults:{id:'',value:''}});var o=t.Collection.extend({localStorage:new t.LocalStorage('Options-'+n.app_slug),model:a,saveAll:function(){this.map(function(e){e.save()})},resetAll:function(){var t=this.length;for(var e=t-1;e>=0;e--){this.at(e).destroy()};this.reset()}});return o});
+define(function (require) {
+
+    "use strict";
+
+    var Backbone                 = require('backbone'),
+    	_                   	 = require('underscore'),
+        Config                   = require( 'root/config' );
+
+    require('localstorage');
+
+    var Option = Backbone.Model.extend({
+    	defaults : {
+    		id : "",
+            value : ""
+        }
+    });
+
+    var Options = Backbone.Collection.extend({
+    	localStorage: new Backbone.LocalStorage( "Options-" + Config.app_slug ),
+    	model : Option,
+    	saveAll : function(){
+       	 	this.map(function(option){option.save();});
+        },
+        resetAll : function(){
+        	var length = this.length;
+        	for (var i = length - 1; i >= 0; i--) {
+        		this.at(i).destroy();
+        	}
+        	this.reset();
+        }
+    });
+
+    return Options;
+
+});

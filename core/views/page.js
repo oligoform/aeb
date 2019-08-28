@@ -1,1 +1,53 @@
-;define(function(require){'use strict';var $=require('jquery'),i=require('underscore'),s=require('core/views/backbone-template-view'),a=require('core/theme-tpl-tags'),r=require('core/lib/hooks');return s.extend({className:'app-screen',initialize:function(e){this.setTemplate('page','single');i.bindAll(this,'render');this.item=e.item;this.global=e.hasOwnProperty('global')?e.global:'pages';this.item.on('change',this.render)},render:function(){var e={post:this.item.toJSON(),TemplateTags:a};e=r.applyFilters('template-args',e,['page',this.template_name,this]);var i=this.template(e);$(this.el).html(i);return this}})});
+define(function (require) {
+
+    "use strict";
+
+    var $                   = require('jquery'),
+        _                   = require('underscore'),
+        TemplateView        = require('core/views/backbone-template-view'),
+        ThemeTplTags		= require('core/theme-tpl-tags'),
+		Hooks               = require('core/lib/hooks');
+
+    return TemplateView.extend({
+    	
+    	className: "app-screen",
+    	
+    	initialize : function(args) {
+            
+    		this.setTemplate('page','single');
+           
+            _.bindAll(this,'render');
+            
+    		this.item = args.item;
+    		this.global = args.hasOwnProperty('global') ? args.global : 'pages';
+    		
+    		this.item.on('change', this.render);
+        },
+
+        render : function() {
+			
+			var template_args = { 
+				post : this.item.toJSON(), 
+				TemplateTags : ThemeTplTags
+			};
+			
+			/**
+			* Use this 'template-args' filter to pass custom data to your
+			* templates.
+			* 
+			* @param template_args : JSON object : the default template data to filter
+			* Params passed to the filter : 
+			* - view type : String
+			* - template name : String
+			* - view object : Backbone view object
+			*/
+			template_args = Hooks.applyFilters( 'template-args', template_args, ['page',this.template_name,this] );
+			
+        	var renderedContent = this.template(template_args);
+            $(this.el).html(renderedContent); 
+            return this;
+        }
+        
+    });
+
+});
