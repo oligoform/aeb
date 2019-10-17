@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <widget xmlns       = "http://www.w3.org/ns/widgets"
         xmlns:gap   = "http://phonegap.com/ns/1.0"
-        id          = "com.oligoform.ameisernenband"
+        id          = "com.testohnemap"
         versionCode = ""
-        version     = "1.1" >
+        version     = "0.1" >
 
-	<name>Am Eisernen Band</name>
+	<name>test ohne map</name>
 
-	<description>Das Eiserne Band f&#252;hrt ausgehend von der Stadt Halle (Saale) auf den h&#246;chsten Berg Mitteldeutschlands, den Brocken. Es ist eine touristische Ausflugsverkehrsachse, die sieben historisch bedeutsame Eisenbahnstrecken mit unterschiedlichen Spurweiten verbindet.</description>
+	<description></description>
 
-	<author href="https://oligoform.com/ameisernenband/" email="ameisernenband-ios@oligoform.com">Oliver Bunke</author>
+	<author href="" email="">oli</author>
 
 	<platform name="android" />
 
@@ -17,8 +17,6 @@
 	<preference name="android-targetSdkVersion" value="28" />
 	<preference name="buildArchitecture" value="arm" />
 	<preference name="android-build-tool" value="gradle" />
-
-	<preference name="phonegap-version" value="cli-9.0.0" />
 	<preference name="permissions" value="none"/>
 
 	<preference name="disallowOverscroll" value="true" />
@@ -34,8 +32,6 @@
 	<plugin name="cordova-plugin-device" source="npm" />
 	<plugin name="cordova-plugin-statusbar" source="npm" />
 	<plugin name="cordova-build-architecture" spec="https://github.com/MBuchalik/cordova-build-architecture.git#v1.0.4" source="git" />
-	<plugin name="cordova-plugin-geolocation" spec="~4.0.2" />
-	<plugin name="cordova-plugin-vibration" spec="~3.1.1" />
 
 	<!-- Whitelist policy  -->
 	<access origin="*" />
@@ -51,19 +47,19 @@
 	<!-- Icons and Splashscreens declaration -->
 
 	<icon src="icon.png" gap:platform="android" />
-	<icon src="icons/ldpi.png" gap:platform="android" gap:qualifier="ldpi" />
+	<icon src="icons/icon-wp-appkit-ldpi.png" gap:platform="android" gap:qualifier="ldpi" />
 	<icon src="icons/icon-wp-appkit-mdpi.png" gap:platform="android" gap:qualifier="mdpi" />
 	<icon src="icons/icon-wp-appkit-hdpi.png" gap:platform="android" gap:qualifier="hdpi" />
-	<icon src="icons/xhdpi.png" gap:platform="android" gap:qualifier="xhdpi" />
+	<icon src="icons/icon-wp-appkit-xhdpi.png" gap:platform="android" gap:qualifier="xhdpi" />
 	<icon src="icons/icon-wp-appkit-xxhdpi.png" gap:platform="android" gap:qualifier="xxhdpi" />
-	<icon src="icons/xxxhdpi.png" gap:platform="android" gap:qualifier="xxxhdpi" />
+	<icon src="icons/icon-wp-appkit-xxxhdpi.png" gap:platform="android" gap:qualifier="xxxhdpi" />
 	
-	<gap:splash src="splash.png" gap:platform="android" />
-	<gap:splash src="splashscreens/splashscreen-wp-appkit-ldpi.png" gap:platform="android" gap:qualifier="ldpi" />
-	<gap:splash src="splashscreens/splash-port-mdpi.png" gap:platform="android" gap:qualifier="mdpi" />
-	<gap:splash src="splashscreens/splash-port-hdpi.png" gap:platform="android" gap:qualifier="hdpi" />
-	<gap:splash src="splashscreens/splash-port-xhdpi.png" gap:platform="android" gap:qualifier="xhdpi" />
-	<gap:splash src="splashscreens/splash-port-xxhdpi.png" gap:platform="android" gap:qualifier="xxhdpi" />
+	<gap:splash src="splash.9.png" gap:platform="android" />
+	<gap:splash src="splashscreens/splashscreen-wp-appkit-ldpi.9.png" gap:platform="android" gap:qualifier="ldpi" />
+	<gap:splash src="splashscreens/splashscreen-wp-appkit-mdpi.9.png" gap:platform="android" gap:qualifier="mdpi" />
+	<gap:splash src="splashscreens/splashscreen-wp-appkit-hdpi.9.png" gap:platform="android" gap:qualifier="hdpi" />
+	<gap:splash src="splashscreens/splashscreen-wp-appkit-xhdpi.9.png" gap:platform="android" gap:qualifier="xhdpi" />
+	<gap:splash src="splashscreens/splashscreen-wp-appkit-xxhdpi.9.png" gap:platform="android" gap:qualifier="xxhdpi" />
 	<gap:splash src="splashscreens/splashscreen-wp-appkit-xxxhdpi.9.png" gap:platform="android" gap:qualifier="xxxhdpi" />
 	
 </widget>
