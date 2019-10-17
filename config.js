@@ -3,19 +3,19 @@ define( function ( require ) {
 	"use strict";
 
 	return {
-		app_slug : 'pwa-test',
-		wp_ws_url : 'https://am-eisernen-band.de/wp-appkit-api/pwa-test',
+		app_slug : 'am-eisernen-band',
+		wp_ws_url : 'https://am-eisernen-band.de/wp-appkit-api/am-eisernen-band',
 		wp_url : 'https://am-eisernen-band.de',
-		theme : 'wpak-theme-bootstrap-search-and-filter-post-lists',
-		version : '0.1',
+		theme : 'q-android-feat-map-leaflet-localstorage',
+		version : '2.2',
 		app_type : 'phonegap-build',
-		app_title : 'Am eisernen Band',
-		app_platform : 'android',
+		app_title : 'Am Eisernen Band',
+		app_platform : 'ios',
 		app_path: '',
 		gmt_offset : 2,
 		debug_mode : 'off',
 		auth_key : 'i]r}kRPFS3#:Y}Y8UK6H4lO5$549xXuN>HlvP!j$UDb!S8|{_szYBhx]J55D-ZE{',
-		options : {"refresh_interval":0,"categories":[{"slug":"action","name":"Action"},{"slug":"angebote-fuer-kinder","name":"Angebote f\u00fcr Kinder"},{"slug":"angeln","name":"Angeln"},{"slug":"apotheken","name":"Apotheken"},{"slug":"aerzte","name":"\u00c4rzte"},{"slug":"aussichtspunkte","name":"Aussichtspunkte"},{"slug":"autowerkstatt","name":"Autowerkstatt"},{"slug":"baeckerei","name":"B\u00e4ckerei"},{"slug":"baden","name":"Baden"},{"slug":"baeder","name":"B\u00e4der"},{"slug":"bank-nuetzliches","name":"Bank"},{"slug":"bergbau-industriegeschichte","name":"Bergbau- &amp; Industriegeschichte"},{"slug":"blumenlaeden","name":"Blumenl\u00e4den"},{"slug":"bootsanleger","name":"Bootsanleger"},{"slug":"bootsfahrschule","name":"Bootsfahrschule"},{"slug":"bootsverleih","name":"Bootsverleih"},{"slug":"buechereien","name":"B\u00fcchereien"},{"slug":"burgen-schloesser","name":"Burgen &amp; Schl\u00f6sser"},{"slug":"bus-und-taxi","name":"Bus und Taxi"},{"slug":"cafes-imbisse","name":"Caf\u00e8s &amp; Imbisse"},{"slug":"camping-wohnmobilstellplaetze","name":"Camping &amp; Wohnmobilstellpl\u00e4tze"},{"slug":"denkmal","name":"Denkmal"},{"slug":"einkaufen","name":"Einkaufen"},{"slug":"eisleben","name":"Eisleben"},{"slug":"faehre","name":"F\u00e4hre"},{"slug":"fahrgastschifffahrt","name":"Fahrgastschifffahrt"},{"slug":"fahrradverleih-fahrradwerkstatt","name":"Fahrradverleih &amp; Fahrradwerkstatt"},{"slug":"familie-entspannung","name":"Familie &amp; Entspannung"},{"slug":"ferienwohnungen-jugendherbergen","name":"Ferienwohnungen &amp; Jugendherbergen"},{"slug":"feuerwehr","name":"Feuerwehr"},{"slug":"fleischerei","name":"Fleischerei"},{"slug":"flora-fauna","name":"Flora &amp; Fauna"},{"slug":"fotostudios","name":"Fotostudios"},{"slug":"freizeitaktivitaeten","name":"Freizeitaktivit\u00e4ten"},{"slug":"gaestezimmer","name":"G\u00e4stezimmer"},{"slug":"gastronomie-uebernachtung","name":"Gastronomie &amp; \u00dcbernachtung"},{"slug":"gaststaetten-biergaerten","name":"Gastst\u00e4tten, Bierg\u00e4rten"},{"slug":"gedenkstaette","name":"Gedenkst\u00e4tte"},{"slug":"geldautomat","name":"Geldautomat"},{"slug":"geologie","name":"Geologie"},{"slug":"gesundheit","name":"Gesundheit"},{"slug":"hettstedt","name":"Hettstedt"},{"slug":"hotels-pensionen","name":"Hotels &amp; Pensionen"},{"slug":"informationstafeln","name":"Informationstafeln"},{"slug":"kirchen","name":"Kirchen"},{"slug":"klettern","name":"Klettern"},{"slug":"konditorei","name":"Konditorei"},{"slug":"konzerte","name":"Konzerte"},{"slug":"kultur-erholung","name":"Kultur &amp; Erholung"},{"slug":"kuenstlerateliers","name":"K\u00fcnstlerateliers"},{"slug":"mode","name":"Mode"},{"slug":"muehlen","name":"M\u00fchlen"},{"slug":"museen","name":"Museen"},{"slug":"musik","name":"Musik"},{"slug":"natur-aktiv","name":"Natur &amp; Aktiv"},{"slug":"naturpark","name":"Naturpark"},{"slug":"nuetzliches","name":"N\u00fctzliches"},{"slug":"physiotherapie-massage","name":"Physiotherapie &amp; Massage"},{"slug":"post","name":"Post"},{"slug":"praehistorisches","name":"Pr\u00e4historisches"},{"slug":"rad-wanderwege","name":"Rad- &amp; Wanderwege"},{"slug":"rastplaetze","name":"Rastpl\u00e4tze"},{"slug":"regionen","name":"Regionen"},{"slug":"rund-ums-wasser","name":"Rund ums Wasser"},{"slug":"unteres-saaletal-petersberg","name":"Saaletal Petersberg"},{"slug":"sagen","name":"Sagen"},{"slug":"salzatal","name":"Salzatal"},{"slug":"sonstiges","name":"Sonstiges"},{"slug":"sonstiges-regionen","name":"Sonstiges"},{"slug":"spielplatz","name":"Spielplatz"},{"slug":"sport","name":"Sport"},{"slug":"suesser-see","name":"S\u00fc\u00dfer See"},{"slug":"themenwege-lehrpfade","name":"Themenwege &amp; Lehrpfade"},{"slug":"themenwege-und-lehrpfade","name":"Themenwege und Lehrpfade"},{"slug":"tierpark","name":"Tierpark"},{"slug":"tourismusinformation","name":"Tourismusinformation"},{"slug":"traditionelles-handwerk","name":"Traditionelles Handwerk"},{"slug":"veranstaltungen-feste","name":"Veranstaltungen &amp; Feste"},{"slug":"weingueter-hoflaeden","name":"Weing\u00fcter &amp; Hofl\u00e4den"},{"slug":"wellness","name":"Wellness"},{"slug":"wlan-hotspot","name":"WLAN-Hotspot"},{"slug":"wohnmobilvermietung","name":"Wohnmobilvermietung"},{"slug":"workshops","name":"Workshops"}]},
+		options : {"refresh_interval":0},
 		theme_settings : [],
 		addons : []
 	};

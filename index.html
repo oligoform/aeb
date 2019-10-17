@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="de-DE">
 	<head>
+			<meta charset="UTF-8">
+			<meta http-equiv="Content-Security-Policy" content="default-src * gap: file:; style-src 'self' 'unsafe-inline'; img-src * data: https: ; media-src * ; script-src * 'unsafe-inline' 'unsafe-eval'; child-src * gap://ready">
+			<meta name="viewport" content="initial-scale=1, width=device-width, height=device-height, viewport-fit=cover">
+
 		<script src="cordova.js"></script>
 		
 		<script type="text/javascript">
@@ -20,7 +24,5 @@
 	</head>
 	<body>
 		<div id="app-layout"></div>
-		<div id="app-debug-panel"></div>
-		<div id="app-debug-button"></div>
 	</body>
 </html>
